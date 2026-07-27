@@ -28,6 +28,7 @@ require APP_ROOT . '/app/views/layouts/project_tabs.php';
                 <h2 class="h6 text-muted">Details</h2>
                 <dl class="row mb-0 small">
                     <dt class="col-5">Code</dt><dd class="col-7"><?= h($project['project_code']) ?></dd>
+                    <dt class="col-5">Type</dt><dd class="col-7"><?= h($project['project_type_name'] ?? '—') ?></dd>
                     <dt class="col-5">Status</dt><dd class="col-7"><?= h($project['status']) ?></dd>
                     <dt class="col-5">Priority</dt><dd class="col-7"><?= h($project['priority']) ?></dd>
                     <dt class="col-5">Department</dt><dd class="col-7"><?= h($project['department_name'] ?? '—') ?></dd>

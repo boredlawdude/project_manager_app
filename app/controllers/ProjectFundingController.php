@@ -6,12 +6,14 @@ final class ProjectFundingController
     private PDO $pdo;
     private ProjectFundingSource $funding;
     private Project $projects;
+    private ProjectFundingSourceType $sourceTypes;
 
     public function __construct()
     {
         $this->pdo = db();
         $this->funding = new ProjectFundingSource($this->pdo);
         $this->projects = new Project($this->pdo);
+        $this->sourceTypes = new ProjectFundingSourceType($this->pdo);
     }
 
     public function index(): void
@@ -22,6 +24,7 @@ final class ProjectFundingController
 
         $fundingList = $this->funding->listByProject($projectId);
         $editFunding = !empty($_GET['edit_id']) ? $this->funding->find((int)$_GET['edit_id']) : null;
+        $fundingSourceTypes = $this->sourceTypes->activeOptions();
         require APP_ROOT . '/app/views/project_funding/index.php';
     }
 

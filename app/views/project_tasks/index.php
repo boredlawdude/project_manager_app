@@ -27,8 +27,8 @@ $pid = (int)$project['project_id'];
                 </div>
                 <div class="col-md-2">
                     <select name="priority" class="form-select">
-                        <?php foreach (['low','medium','high','critical'] as $p): ?>
-                            <option value="<?= $p ?>" <?= ($editTask['priority'] ?? 'medium') === $p ? 'selected' : '' ?>><?= ucfirst($p) ?></option>
+                        <?php foreach ($priorities as $p): ?>
+                            <option value="<?= h($p['priority_name']) ?>" <?= ($editTask['priority'] ?? 'medium') === $p['priority_name'] ? 'selected' : '' ?>><?= h(ucfirst($p['priority_name'])) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>

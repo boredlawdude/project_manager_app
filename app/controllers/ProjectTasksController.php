@@ -6,12 +6,14 @@ final class ProjectTasksController
     private PDO $pdo;
     private ProjectTask $tasks;
     private Project $projects;
+    private ProjectPriority $priorities;
 
     public function __construct()
     {
         $this->pdo = db();
         $this->tasks = new ProjectTask($this->pdo);
         $this->projects = new Project($this->pdo);
+        $this->priorities = new ProjectPriority($this->pdo);
     }
 
     public function index(): void
@@ -26,6 +28,7 @@ final class ProjectTasksController
             $editTask = $this->tasks->find((int)$_GET['edit_id']);
         }
         $people = $this->peopleOptions();
+        $priorities = $this->priorities->activeOptions();
         require APP_ROOT . '/app/views/project_tasks/index.php';
     }
 

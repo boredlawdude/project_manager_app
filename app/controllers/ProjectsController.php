@@ -5,11 +5,21 @@ final class ProjectsController
 {
     private PDO $pdo;
     private Project $projects;
+    private ProjectStatus $statuses;
+    private ProjectPriority $priorities;
+    private ProjectType $projectTypes;
+    private ProjectTypeDefaultTask $defaultTasks;
+    private ProjectTask $tasks;
 
     public function __construct()
     {
         $this->pdo = db();
         $this->projects = new Project($this->pdo);
+        $this->statuses = new ProjectStatus($this->pdo);
+        $this->priorities = new ProjectPriority($this->pdo);
+        $this->projectTypes = new ProjectType($this->pdo);
+        $this->defaultTasks = new ProjectTypeDefaultTask($this->pdo);
+        $this->tasks = new ProjectTask($this->pdo);
     }
 
     public function index(): void
@@ -21,6 +31,7 @@ final class ProjectsController
         ];
         $projectList = $this->projects->search($filters);
         $departments = $this->departmentOptions();
+        $statuses = $this->statuses->activeOptions();
         require APP_ROOT . '/app/views/projects/index.php';
     }
 
@@ -29,6 +40,10 @@ final class ProjectsController
         $project = $this->emptyProject();
         $departments = $this->departmentOptions();
         $people = $this->peopleOptions();
+        $statuses = $this->statuses->activeOptions();
+        $priorities = $this->priorities->activeOptions();
+        $projectTypes = $this->projectTypes->activeOptions();
+        $defaultTasksByType = $this->defaultTasksByTypeJson();
         $errors = [];
         require APP_ROOT . '/app/views/projects/create.php';
     }
@@ -46,12 +61,34 @@ final class ProjectsController
             $project = $data;
             $departments = $this->departmentOptions();
             $people = $this->peopleOptions();
+            $statuses = $this->statuses->activeOptions();
+            $priorities = $this->priorities->activeOptions();
+            $projectTypes = $this->projectTypes->activeOptions();
+            $defaultTasksByType = $this->defaultTasksByTypeJson();
             require APP_ROOT . '/app/views/projects/create.php';
             return;
         }
 
         $data['created_by_person_id'] = current_person_id();
         $id = $this->projects->create($data);
+
+        $selectedDefaultTaskIds = array_map('intval', (array)($_POST['default_task_ids'] ?? []));
+        foreach ($selectedDefaultTaskIds as $defaultTaskId) {
+            $defaultTask = $this->defaultTasks->find($defaultTaskId);
+            if ($defaultTask && (int)$defaultTask['project_type_id'] === (int)$data['project_type_id']) {
+                $this->tasks->create($id, [
+                    'task_name' => $defaultTask['task_name'],
+                    'description' => $defaultTask['description'] ?? '',
+                    'status' => 'not_started',
+                    'priority' => 'medium',
+                    'assigned_to_person_id' => null,
+                    'start_date' => '',
+                    'due_date' => '',
+                    'parent_task_id' => null,
+                ], current_person_id());
+            }
+        }
+
         header('Location: /index.php?page=projects_show&project_id=' . $id);
         exit;
     }
@@ -79,6 +116,10 @@ final class ProjectsController
         }
         $departments = $this->departmentOptions();
         $people = $this->peopleOptions();
+        $statuses = $this->statuses->activeOptions();
+        $priorities = $this->priorities->activeOptions();
+        $projectTypes = $this->projectTypes->activeOptions();
+        $defaultTasksByType = $this->defaultTasksByTypeJson();
         $errors = [];
         require APP_ROOT . '/app/views/projects/edit.php';
     }
@@ -97,6 +138,10 @@ final class ProjectsController
             $project = array_merge(['project_id' => $id], $data);
             $departments = $this->departmentOptions();
             $people = $this->peopleOptions();
+            $statuses = $this->statuses->activeOptions();
+            $priorities = $this->priorities->activeOptions();
+            $projectTypes = $this->projectTypes->activeOptions();
+            $defaultTasksByType = $this->defaultTasksByTypeJson();
             require APP_ROOT . '/app/views/projects/edit.php';
             return;
         }
@@ -124,6 +169,7 @@ final class ProjectsController
             'description' => trim((string)($_POST['description'] ?? '')),
             'status' => (string)($_POST['status'] ?? 'proposed'),
             'priority' => (string)($_POST['priority'] ?? 'medium'),
+            'project_type_id' => (int)($_POST['project_type_id'] ?? 0) ?: null,
             'department_id' => (int)($_POST['department_id'] ?? 0) ?: null,
             'project_manager_person_id' => (int)($_POST['project_manager_person_id'] ?? 0) ?: null,
             'sponsor_person_id' => (int)($_POST['sponsor_person_id'] ?? 0) ?: null,
@@ -146,7 +192,7 @@ final class ProjectsController
     {
         return [
             'project_code' => '', 'project_name' => '', 'description' => '',
-            'status' => 'proposed', 'priority' => 'medium',
+            'status' => 'proposed', 'priority' => 'medium', 'project_type_id' => null,
             'department_id' => null, 'project_manager_person_id' => null, 'sponsor_person_id' => null,
             'start_date' => '', 'target_end_date' => '', 'actual_end_date' => '', 'estimated_budget' => '',
         ];
@@ -160,5 +206,20 @@ final class ProjectsController
     private function peopleOptions(): array
     {
         return $this->pdo->query("SELECT person_id, CONCAT(first_name,' ',last_name) AS name FROM people WHERE is_active = 1 ORDER BY name")->fetchAll();
+    }
+
+    /** JSON map of project_type_id => [{default_task_id, task_name, description}], for the create/edit form's JS-driven default-tasks checklist. */
+    private function defaultTasksByTypeJson(): string
+    {
+        $rows = $this->pdo->query("SELECT default_task_id, project_type_id, task_name, description FROM project_type_default_tasks ORDER BY sort_order ASC, task_name ASC")->fetchAll();
+        $byType = [];
+        foreach ($rows as $row) {
+            $byType[(int)$row['project_type_id']][] = [
+                'id' => (int)$row['default_task_id'],
+                'name' => $row['task_name'],
+                'description' => $row['description'],
+            ];
+        }
+        return json_encode($byType, JSON_THROW_ON_ERROR);
     }
 }

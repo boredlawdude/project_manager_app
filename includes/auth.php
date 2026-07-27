@@ -77,9 +77,11 @@ function require_login(): void
         header('Location: /login.php?next=' . urlencode($next));
         exit;
     }
-    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
-    header('Pragma: no-cache');
-    header('Expires: Thu, 01 Jan 1970 00:00:00 GMT');
+    if (!headers_sent()) {
+        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+        header('Pragma: no-cache');
+        header('Expires: Thu, 01 Jan 1970 00:00:00 GMT');
+    }
 }
 
 function logout_person(): void
@@ -162,4 +164,19 @@ function person_has_role_key(string $role_key): bool
     ");
     $stmt->execute([$pid, $role_key]);
     return (int)$stmt->fetchColumn() > 0;
+}
+
+function is_system_admin(): bool
+{
+    return person_has_role_key('SUPERUSER') || person_has_role_key('ADMIN');
+}
+
+function require_system_admin(): void
+{
+    require_login();
+    if (!is_system_admin()) {
+        http_response_code(403);
+        echo "Forbidden (admin only).";
+        exit;
+    }
 }

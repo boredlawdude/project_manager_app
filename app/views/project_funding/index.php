@@ -19,8 +19,8 @@ $pid = (int)$project['project_id'];
                 </div>
                 <div class="col-md-2">
                     <select name="source_type" class="form-select">
-                        <?php foreach (['grant','bond','general_fund','enterprise_fund','impact_fee','other'] as $t): ?>
-                            <option value="<?= $t ?>" <?= ($editFunding['source_type'] ?? 'other') === $t ? 'selected' : '' ?>><?= ucwords(str_replace('_',' ',$t)) ?></option>
+                        <?php foreach ($fundingSourceTypes as $t): ?>
+                            <option value="<?= h($t['type_name']) ?>" <?= ($editFunding['source_type'] ?? 'other') === $t['type_name'] ? 'selected' : '' ?>><?= h(ucwords(str_replace('_',' ',$t['type_name']))) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>

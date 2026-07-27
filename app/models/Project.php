@@ -11,9 +11,11 @@ final class Project
             SELECT
                 p.*,
                 d.department_name,
+                pt.project_type_name,
                 CONCAT(pm.first_name, ' ', pm.last_name) AS project_manager_name
             FROM projects p
             LEFT JOIN departments d ON p.department_id = d.department_id
+            LEFT JOIN project_types pt ON p.project_type_id = pt.project_type_id
             LEFT JOIN people pm ON p.project_manager_person_id = pm.person_id
             WHERE 1=1
         ";
@@ -45,10 +47,12 @@ final class Project
             SELECT
                 p.*,
                 d.department_name,
+                pt.project_type_name,
                 CONCAT(pm.first_name, ' ', pm.last_name) AS project_manager_name,
                 CONCAT(sp.first_name, ' ', sp.last_name) AS sponsor_name
             FROM projects p
             LEFT JOIN departments d ON p.department_id = d.department_id
+            LEFT JOIN project_types pt ON p.project_type_id = pt.project_type_id
             LEFT JOIN people pm ON p.project_manager_person_id = pm.person_id
             LEFT JOIN people sp ON p.sponsor_person_id = sp.person_id
             WHERE p.project_id = ?
@@ -63,12 +67,12 @@ final class Project
     {
         $stmt = $this->db->prepare("
             INSERT INTO projects (
-                project_code, project_name, description, status, priority,
+                project_code, project_name, description, status, priority, project_type_id,
                 department_id, project_manager_person_id, sponsor_person_id,
                 start_date, target_end_date, actual_end_date, estimated_budget,
                 created_by_person_id
             ) VALUES (
-                :project_code, :project_name, :description, :status, :priority,
+                :project_code, :project_name, :description, :status, :priority, :project_type_id,
                 :department_id, :project_manager_person_id, :sponsor_person_id,
                 :start_date, :target_end_date, :actual_end_date, :estimated_budget,
                 :created_by_person_id
@@ -80,6 +84,7 @@ final class Project
             'description' => $data['description'] ?: null,
             'status' => $data['status'],
             'priority' => $data['priority'],
+            'project_type_id' => $data['project_type_id'] ?: null,
             'department_id' => $data['department_id'] ?: null,
             'project_manager_person_id' => $data['project_manager_person_id'] ?: null,
             'sponsor_person_id' => $data['sponsor_person_id'] ?: null,
@@ -101,6 +106,7 @@ final class Project
                 description = :description,
                 status = :status,
                 priority = :priority,
+                project_type_id = :project_type_id,
                 department_id = :department_id,
                 project_manager_person_id = :project_manager_person_id,
                 sponsor_person_id = :sponsor_person_id,
@@ -116,6 +122,7 @@ final class Project
             'description' => $data['description'] ?: null,
             'status' => $data['status'],
             'priority' => $data['priority'],
+            'project_type_id' => $data['project_type_id'] ?: null,
             'department_id' => $data['department_id'] ?: null,
             'project_manager_person_id' => $data['project_manager_person_id'] ?: null,
             'sponsor_person_id' => $data['sponsor_person_id'] ?: null,

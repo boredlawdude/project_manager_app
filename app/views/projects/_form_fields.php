@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
-/** Shared form fields for create/edit, expects $project, $departments, $people */
+/** Shared form fields for create/edit, expects $project, $departments, $people, $statuses, $priorities, $projectTypes, $defaultTasksByType */
+$isNewProject = empty($project['project_id']);
 ?>
 <div class="row g-3">
     <div class="col-md-4">
@@ -15,19 +16,30 @@ declare(strict_types=1);
         <label class="form-label">Description</label>
         <textarea name="description" class="form-control" rows="3"><?= h($project['description'] ?? '') ?></textarea>
     </div>
-    <div class="col-md-3">
-        <label class="form-label">Status</label>
-        <select name="status" class="form-select">
-            <?php foreach (['proposed','active','on_hold','completed','cancelled'] as $s): ?>
-                <option value="<?= h($s) ?>" <?= ($project['status'] ?? 'proposed') === $s ? 'selected' : '' ?>><?= h(ucwords(str_replace('_',' ',$s))) ?></option>
+    <div class="col-md-4">
+        <label class="form-label">Project Type</label>
+        <select name="project_type_id" id="projectTypeSelect" class="form-select">
+            <option value="">—</option>
+            <?php foreach ($projectTypes as $t): ?>
+                <option value="<?= (int)$t['project_type_id'] ?>" <?= (string)($project['project_type_id'] ?? '') === (string)$t['project_type_id'] ? 'selected' : '' ?>>
+                    <?= h($t['project_type_name']) ?>
+                </option>
             <?php endforeach; ?>
         </select>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-4">
+        <label class="form-label">Status</label>
+        <select name="status" class="form-select">
+            <?php foreach ($statuses as $s): ?>
+                <option value="<?= h($s['status_name']) ?>" <?= ($project['status'] ?? 'proposed') === $s['status_name'] ? 'selected' : '' ?>><?= h(ucwords(str_replace('_',' ',$s['status_name']))) ?></option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+    <div class="col-md-4">
         <label class="form-label">Priority</label>
         <select name="priority" class="form-select">
-            <?php foreach (['low','medium','high','critical'] as $p): ?>
-                <option value="<?= h($p) ?>" <?= ($project['priority'] ?? 'medium') === $p ? 'selected' : '' ?>><?= h(ucfirst($p)) ?></option>
+            <?php foreach ($priorities as $p): ?>
+                <option value="<?= h($p['priority_name']) ?>" <?= ($project['priority'] ?? 'medium') === $p['priority_name'] ? 'selected' : '' ?>><?= h(ucfirst($p['priority_name'])) ?></option>
             <?php endforeach; ?>
         </select>
     </div>
@@ -80,4 +92,43 @@ declare(strict_types=1);
         <label class="form-label">Actual End Date</label>
         <input type="date" name="actual_end_date" class="form-control" value="<?= h($project['actual_end_date'] ?? '') ?>">
     </div>
+
+    <?php if ($isNewProject): ?>
+    <div class="col-12" id="defaultTasksSection" style="display:none">
+        <label class="form-label fw-bold">Suggested Tasks for this Project Type</label>
+        <div class="form-text text-muted mb-2">Check any of the standard tasks below to automatically add them to this project.</div>
+        <div id="defaultTasksList" class="border rounded p-3 bg-white"></div>
+    </div>
+    <script>
+        (function () {
+            var tasksByType = <?= $defaultTasksByType ?? '{}' ?>;
+            var typeSelect = document.getElementById('projectTypeSelect');
+            var section = document.getElementById('defaultTasksSection');
+            var list = document.getElementById('defaultTasksList');
+
+            function render() {
+                var tasks = tasksByType[typeSelect.value] || [];
+                list.innerHTML = '';
+                if (!tasks.length) {
+                    section.style.display = 'none';
+                    return;
+                }
+                tasks.forEach(function (t) {
+                    var wrap = document.createElement('div');
+                    wrap.className = 'form-check';
+                    var label = t.name + (t.description ? ' — ' + t.description : '');
+                    wrap.innerHTML = '<input class="form-check-input" type="checkbox" name="default_task_ids[]" value="' + t.id + '" id="dt' + t.id + '">' +
+                        '<label class="form-check-label" for="dt' + t.id + '"></label>';
+                    wrap.querySelector('label').textContent = label;
+                    list.appendChild(wrap);
+                });
+                section.style.display = '';
+            }
+
+            typeSelect.addEventListener('change', render);
+            render();
+        })();
+    </script>
+    <?php endif; ?>
 </div>
+

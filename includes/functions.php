@@ -29,7 +29,19 @@ if (!function_exists('app_path')) {
 if (!function_exists('storage_path')) {
     function storage_path(string $path = ''): string
     {
-        $base = app_path('storage');
+        static $customBase = null;
+        if ($customBase === null) {
+            $customBase = '';
+            if (function_exists('db')) {
+                try {
+                    $val = db()->query("SELECT setting_value FROM pm_settings WHERE setting_key = 'document_root_path' LIMIT 1")->fetchColumn();
+                    $customBase = trim((string)($val ?: ''));
+                } catch (Throwable $e) {
+                    $customBase = '';
+                }
+            }
+        }
+        $base = $customBase !== '' ? rtrim($customBase, '/') : app_path('storage');
 
         return $path !== ''
             ? $base . '/' . ltrim($path, '/')

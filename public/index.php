@@ -12,6 +12,13 @@ require_once APP_ROOT . '/app/models/ProjectMeeting.php';
 require_once APP_ROOT . '/app/models/ProjectTimelineMilestone.php';
 require_once APP_ROOT . '/app/models/ProjectDocument.php';
 require_once APP_ROOT . '/app/models/ProjectTeamMember.php';
+require_once APP_ROOT . '/app/models/ProjectStatus.php';
+require_once APP_ROOT . '/app/models/ProjectPriority.php';
+require_once APP_ROOT . '/app/models/ProjectFundingSourceType.php';
+require_once APP_ROOT . '/app/models/ProjectDocumentType.php';
+require_once APP_ROOT . '/app/models/ProjectType.php';
+require_once APP_ROOT . '/app/models/ProjectTypeDefaultTask.php';
+require_once APP_ROOT . '/app/models/PmSetting.php';
 
 require_once APP_ROOT . '/app/controllers/ProjectsController.php';
 require_once APP_ROOT . '/app/controllers/ProjectTasksController.php';
@@ -22,6 +29,12 @@ require_once APP_ROOT . '/app/controllers/ProjectMeetingsController.php';
 require_once APP_ROOT . '/app/controllers/ProjectTimelineController.php';
 require_once APP_ROOT . '/app/controllers/ProjectDocumentsController.php';
 require_once APP_ROOT . '/app/controllers/ProjectTeamController.php';
+require_once APP_ROOT . '/app/controllers/ProjectStatusesController.php';
+require_once APP_ROOT . '/app/controllers/ProjectPrioritiesController.php';
+require_once APP_ROOT . '/app/controllers/ProjectFundingSourceTypesController.php';
+require_once APP_ROOT . '/app/controllers/ProjectDocumentTypesController.php';
+require_once APP_ROOT . '/app/controllers/ProjectTypesController.php';
+require_once APP_ROOT . '/app/controllers/AdminSettingsController.php';
 
 $page = $_GET['page'] ?? 'projects';
 
@@ -137,6 +150,90 @@ switch ($page) {
         (new ProjectDocumentsController())->download();
         break;
     case 'project_documents_delete':
+    case 'admin_settings':
+        (new AdminSettingsController())->index();
+        break;
+    case 'admin_settings_update':
+        (new AdminSettingsController())->update();
+        break;
+
+    case 'admin_project_statuses':
+        (new ProjectStatusesController())->index();
+        break;
+    case 'admin_project_statuses_store':
+        (new ProjectStatusesController())->store();
+        break;
+    case 'admin_project_statuses_update':
+        (new ProjectStatusesController())->update();
+        break;
+    case 'admin_project_statuses_delete':
+        (new ProjectStatusesController())->destroy();
+        break;
+
+    case 'admin_project_priorities':
+        (new ProjectPrioritiesController())->index();
+        break;
+    case 'admin_project_priorities_store':
+        (new ProjectPrioritiesController())->store();
+        break;
+    case 'admin_project_priorities_update':
+        (new ProjectPrioritiesController())->update();
+        break;
+    case 'admin_project_priorities_delete':
+        (new ProjectPrioritiesController())->destroy();
+        break;
+
+    case 'admin_funding_source_types':
+        (new ProjectFundingSourceTypesController())->index();
+        break;
+    case 'admin_funding_source_types_store':
+        (new ProjectFundingSourceTypesController())->store();
+        break;
+    case 'admin_funding_source_types_update':
+        (new ProjectFundingSourceTypesController())->update();
+        break;
+    case 'admin_funding_source_types_delete':
+        (new ProjectFundingSourceTypesController())->destroy();
+        break;
+
+    case 'admin_document_types':
+        (new ProjectDocumentTypesController())->index();
+        break;
+    case 'admin_document_types_store':
+        (new ProjectDocumentTypesController())->store();
+        break;
+    case 'admin_document_types_update':
+        (new ProjectDocumentTypesController())->update();
+        break;
+    case 'admin_document_types_delete':
+        (new ProjectDocumentTypesController())->destroy();
+        break;
+
+    case 'project_types':
+        (new ProjectTypesController())->index();
+        break;
+    case 'project_types_store':
+        (new ProjectTypesController())->store();
+        break;
+    case 'project_types_edit':
+        (new ProjectTypesController())->edit();
+        break;
+    case 'project_types_update':
+        (new ProjectTypesController())->update();
+        break;
+    case 'project_types_delete':
+        (new ProjectTypesController())->destroy();
+        break;
+    case 'project_type_default_tasks_store':
+        (new ProjectTypesController())->defaultTaskStore();
+        break;
+    case 'project_type_default_tasks_update':
+        (new ProjectTypesController())->defaultTaskUpdate();
+        break;
+    case 'project_type_default_tasks_delete':
+        (new ProjectTypesController())->defaultTaskDestroy();
+        break;
+
         (new ProjectDocumentsController())->destroy();
         break;
 

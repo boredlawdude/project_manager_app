@@ -6,12 +6,14 @@ final class ProjectDocumentsController
     private PDO $pdo;
     private ProjectDocument $documents;
     private Project $projects;
+    private ProjectDocumentType $documentTypes;
 
     public function __construct()
     {
         $this->pdo = db();
         $this->documents = new ProjectDocument($this->pdo);
         $this->projects = new Project($this->pdo);
+        $this->documentTypes = new ProjectDocumentType($this->pdo);
     }
 
     public function index(): void
@@ -21,6 +23,7 @@ final class ProjectDocumentsController
         if (!$project) { http_response_code(404); echo "Project not found."; return; }
 
         $documentList = $this->documents->listByProject($projectId);
+        $documentTypes = $this->documentTypes->activeOptions();
         require APP_ROOT . '/app/views/project_documents/index.php';
     }
 
@@ -48,7 +51,7 @@ final class ProjectDocumentsController
                     $this->documents->create($projectId, [
                         'doc_type' => trim((string)($_POST['doc_type'] ?? 'other')),
                         'file_name' => $file['name'],
-                        'file_path' => 'storage/projects/' . $projectId . '/' . $storedName,
+                        'file_path' => $dest,
                         'mime_type' => $file['type'] ?? null,
                     ], current_person_id());
                 }
@@ -65,7 +68,7 @@ final class ProjectDocumentsController
         $doc = $this->documents->find($id);
         if (!$doc) { http_response_code(404); echo "Document not found."; return; }
 
-        $path = APP_ROOT . '/' . ltrim($doc['file_path'], '/');
+        $path = $this->resolveDocPath($doc['file_path']);
         if (!is_file($path)) { http_response_code(404); echo "File missing."; return; }
 
         header('Content-Type: ' . ($doc['mime_type'] ?: 'application/octet-stream'));
@@ -82,7 +85,7 @@ final class ProjectDocumentsController
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $doc = $this->documents->find($id);
             if ($doc) {
-                $path = APP_ROOT . '/' . ltrim($doc['file_path'], '/');
+                $path = $this->resolveDocPath($doc['file_path']);
                 if (is_file($path)) {
                     @unlink($path);
                 }
@@ -91,5 +94,11 @@ final class ProjectDocumentsController
         }
         header('Location: /index.php?page=project_documents&project_id=' . $projectId);
         exit;
+    }
+
+    /** file_path is stored absolute for new uploads; older rows may have a path relative to APP_ROOT. */
+    private function resolveDocPath(string $filePath): string
+    {
+        return str_starts_with($filePath, '/') ? $filePath : APP_ROOT . '/' . ltrim($filePath, '/');
     }
 }

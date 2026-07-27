@@ -16,8 +16,8 @@ $pid = (int)$project['project_id'];
                 <div class="col-md-3">
                     <label class="form-label small mb-0">Document Type</label>
                     <select name="doc_type" class="form-select">
-                        <?php foreach (['charter','report','correspondence','plan','other'] as $t): ?>
-                            <option value="<?= $t ?>"><?= ucfirst($t) ?></option>
+                        <?php foreach ($documentTypes as $t): ?>
+                            <option value="<?= h($t['type_name']) ?>"><?= h(ucwords(str_replace('_',' ',$t['type_name']))) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>

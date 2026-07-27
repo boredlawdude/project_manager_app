@@ -28,6 +28,9 @@ declare(strict_types=1);
     <div class="collapse navbar-collapse" id="navMain">
       <ul class="navbar-nav me-auto">
         <li class="nav-item"><a class="nav-link" href="/index.php?page=projects">Projects</a></li>
+        <?php if (function_exists('is_system_admin') && is_system_admin()): ?>
+          <li class="nav-item"><a class="nav-link" href="/index.php?page=admin_settings">Admin</a></li>
+        <?php endif; ?>
       </ul>
       <ul class="navbar-nav">
         <?php if (function_exists('current_person') && ($p = current_person())): ?>

@@ -20,8 +20,8 @@ require APP_ROOT . '/app/views/layouts/header.php';
             <label class="form-label">Status</label>
             <select name="status" class="form-select">
                 <option value="">All</option>
-                <?php foreach (['proposed','active','on_hold','completed','cancelled'] as $s): ?>
-                    <option value="<?= h($s) ?>" <?= ($_GET['status'] ?? '') === $s ? 'selected' : '' ?>><?= h(ucwords(str_replace('_',' ',$s))) ?></option>
+                <?php foreach ($statuses as $s): ?>
+                    <option value="<?= h($s['status_name']) ?>" <?= ($_GET['status'] ?? '') === $s['status_name'] ? 'selected' : '' ?>><?= h(ucwords(str_replace('_',' ',$s['status_name']))) ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
@@ -48,6 +48,7 @@ require APP_ROOT . '/app/views/layouts/header.php';
             <tr>
                 <th>Code</th>
                 <th>Name</th>
+                <th>Type</th>
                 <th>Status</th>
                 <th>Priority</th>
                 <th>Department</th>
@@ -57,12 +58,13 @@ require APP_ROOT . '/app/views/layouts/header.php';
         </thead>
         <tbody>
             <?php if (!$projectList): ?>
-                <tr><td colspan="7" class="text-center text-muted py-4">No projects found.</td></tr>
+                <tr><td colspan="8" class="text-center text-muted py-4">No projects found.</td></tr>
             <?php endif; ?>
             <?php foreach ($projectList as $p): ?>
                 <tr>
                     <td><a href="/index.php?page=projects_show&project_id=<?= (int)$p['project_id'] ?>"><?= h($p['project_code']) ?></a></td>
                     <td><?= h($p['project_name']) ?></td>
+                    <td><?= h($p['project_type_name'] ?? '') ?></td>
                     <td><span class="badge text-bg-secondary"><?= h($p['status']) ?></span></td>
                     <td><?= h($p['priority']) ?></td>
                     <td><?= h($p['department_name'] ?? '') ?></td>
