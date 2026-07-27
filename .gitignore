@@ -3,3 +3,4 @@
 /storage/projects/*
 !/storage/projects/.gitkeep
 .DS_Store
+*_export.sql
