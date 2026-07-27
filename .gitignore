@@ -1,0 +1,5 @@
+/vendor/
+/.env
+/storage/projects/*
+!/storage/projects/.gitkeep
+.DS_Store
