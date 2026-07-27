@@ -35,6 +35,7 @@ require_once APP_ROOT . '/app/controllers/ProjectFundingSourceTypesController.ph
 require_once APP_ROOT . '/app/controllers/ProjectDocumentTypesController.php';
 require_once APP_ROOT . '/app/controllers/ProjectTypesController.php';
 require_once APP_ROOT . '/app/controllers/AdminSettingsController.php';
+require_once APP_ROOT . '/app/controllers/ProjectGanttController.php';
 
 $page = $_GET['page'] ?? 'projects';
 
@@ -73,6 +74,13 @@ switch ($page) {
         break;
     case 'project_tasks_delete':
         (new ProjectTasksController())->destroy();
+        break;
+    case 'project_tasks_import_defaults':
+        (new ProjectTasksController())->importDefaults();
+        break;
+
+    case 'project_gantt':
+        (new ProjectGanttController())->index();
         break;
 
     case 'project_risks':
@@ -150,6 +158,9 @@ switch ($page) {
         (new ProjectDocumentsController())->download();
         break;
     case 'project_documents_delete':
+        (new ProjectDocumentsController())->destroy();
+        break;
+
     case 'admin_settings':
         (new AdminSettingsController())->index();
         break;
@@ -233,8 +244,8 @@ switch ($page) {
     case 'project_type_default_tasks_delete':
         (new ProjectTypesController())->defaultTaskDestroy();
         break;
-
-        (new ProjectDocumentsController())->destroy();
+    case 'project_type_default_tasks_reorder':
+        (new ProjectTypesController())->defaultTasksReorder();
         break;
 
     case 'project_team':

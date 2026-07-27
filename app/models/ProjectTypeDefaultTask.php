@@ -20,22 +20,28 @@ final class ProjectTypeDefaultTask
         return $row ?: null;
     }
 
-    public function create(int $projectTypeId, string $taskName, string $description): int
+    public function create(int $projectTypeId, string $taskName, string $description, int $sortOrder = 0): int
     {
-        $stmt = $this->db->prepare("INSERT INTO project_type_default_tasks (project_type_id, task_name, description) VALUES (?, ?, ?)");
-        $stmt->execute([$projectTypeId, $taskName, $description]);
+        $stmt = $this->db->prepare("INSERT INTO project_type_default_tasks (project_type_id, task_name, description, sort_order) VALUES (?, ?, ?, ?)");
+        $stmt->execute([$projectTypeId, $taskName, $description, $sortOrder]);
         return (int)$this->db->lastInsertId();
     }
 
-    public function update(int $id, string $taskName, string $description): bool
+    public function update(int $id, string $taskName, string $description, int $sortOrder = 0): bool
     {
-        $stmt = $this->db->prepare("UPDATE project_type_default_tasks SET task_name = ?, description = ? WHERE default_task_id = ?");
-        return $stmt->execute([$taskName, $description, $id]);
+        $stmt = $this->db->prepare("UPDATE project_type_default_tasks SET task_name = ?, description = ?, sort_order = ? WHERE default_task_id = ?");
+        return $stmt->execute([$taskName, $description, $sortOrder, $id]);
     }
 
     public function delete(int $id): bool
     {
         $stmt = $this->db->prepare("DELETE FROM project_type_default_tasks WHERE default_task_id = ?");
         return $stmt->execute([$id]);
+    }
+
+    public function updateSortOrder(int $id, int $projectTypeId, int $sortOrder): bool
+    {
+        $stmt = $this->db->prepare("UPDATE project_type_default_tasks SET sort_order = ? WHERE default_task_id = ? AND project_type_id = ?");
+        return $stmt->execute([$sortOrder, $id, $projectTypeId]);
     }
 }

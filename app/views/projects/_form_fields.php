@@ -97,6 +97,10 @@ $isNewProject = empty($project['project_id']);
     <div class="col-12" id="defaultTasksSection" style="display:none">
         <label class="form-label fw-bold">Suggested Tasks for this Project Type</label>
         <div class="form-text text-muted mb-2">Check any of the standard tasks below to automatically add them to this project.</div>
+        <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="defaultTasksSelectAll">
+            <label class="form-check-label fw-semibold" for="defaultTasksSelectAll">Select All</label>
+        </div>
         <div id="defaultTasksList" class="border rounded p-3 bg-white"></div>
     </div>
     <script>
@@ -105,10 +109,12 @@ $isNewProject = empty($project['project_id']);
             var typeSelect = document.getElementById('projectTypeSelect');
             var section = document.getElementById('defaultTasksSection');
             var list = document.getElementById('defaultTasksList');
+            var selectAll = document.getElementById('defaultTasksSelectAll');
 
             function render() {
                 var tasks = tasksByType[typeSelect.value] || [];
                 list.innerHTML = '';
+                selectAll.checked = false;
                 if (!tasks.length) {
                     section.style.display = 'none';
                     return;
@@ -117,13 +123,17 @@ $isNewProject = empty($project['project_id']);
                     var wrap = document.createElement('div');
                     wrap.className = 'form-check';
                     var label = t.name + (t.description ? ' — ' + t.description : '');
-                    wrap.innerHTML = '<input class="form-check-input" type="checkbox" name="default_task_ids[]" value="' + t.id + '" id="dt' + t.id + '">' +
+                    wrap.innerHTML = '<input class="form-check-input default-task-cb" type="checkbox" name="default_task_ids[]" value="' + t.id + '" id="dt' + t.id + '">' +
                         '<label class="form-check-label" for="dt' + t.id + '"></label>';
                     wrap.querySelector('label').textContent = label;
                     list.appendChild(wrap);
                 });
                 section.style.display = '';
             }
+
+            selectAll.addEventListener('change', function () {
+                list.querySelectorAll('.default-task-cb').forEach(function (cb) { cb.checked = selectAll.checked; });
+            });
 
             typeSelect.addEventListener('change', render);
             render();

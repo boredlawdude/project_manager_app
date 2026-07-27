@@ -7,6 +7,7 @@ declare(strict_types=1);
 $tabs = [
     'details'  => ['label' => 'Project Details', 'page' => 'projects_show'],
     'tasks'    => ['label' => 'Tasks',            'page' => 'project_tasks'],
+    'gantt'    => ['label' => 'Gantt Chart',      'page' => 'project_gantt'],
     'risks'    => ['label' => 'Risks',            'page' => 'project_risks'],
     'budget'   => ['label' => 'Budget',           'page' => 'project_budget'],
     'funding'  => ['label' => 'Funding',          'page' => 'project_funding'],

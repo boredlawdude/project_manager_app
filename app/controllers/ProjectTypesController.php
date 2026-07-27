@@ -110,8 +110,9 @@ final class ProjectTypesController
         $typeId = (int)($_POST['project_type_id'] ?? 0);
         $taskName = trim((string)($_POST['task_name'] ?? ''));
         $desc = trim((string)($_POST['description'] ?? ''));
+        $sortOrder = (int)($_POST['sort_order'] ?? 0);
         if ($typeId > 0 && $taskName !== '') {
-            $this->defaultTasks->create($typeId, $taskName, $desc);
+            $this->defaultTasks->create($typeId, $taskName, $desc, $sortOrder);
         }
         header('Location: /index.php?page=project_types_edit&project_type_id=' . $typeId);
         exit;
@@ -124,8 +125,9 @@ final class ProjectTypesController
         $typeId = (int)($_POST['project_type_id'] ?? 0);
         $taskName = trim((string)($_POST['task_name'] ?? ''));
         $desc = trim((string)($_POST['description'] ?? ''));
+        $sortOrder = (int)($_POST['sort_order'] ?? 0);
         if ($id > 0 && $taskName !== '') {
-            $this->defaultTasks->update($id, $taskName, $desc);
+            $this->defaultTasks->update($id, $taskName, $desc, $sortOrder);
         }
         header('Location: /index.php?page=project_types_edit&project_type_id=' . $typeId);
         exit;
@@ -141,5 +143,28 @@ final class ProjectTypesController
         }
         header('Location: /index.php?page=project_types_edit&project_type_id=' . $typeId);
         exit;
+    }
+
+    public function defaultTasksReorder(): void
+    {
+        header('Content-Type: application/json');
+        require_system_admin();
+        $typeId = (int)($_POST['project_type_id'] ?? 0);
+        $order = array_map('intval', (array)($_POST['order'] ?? []));
+        if ($typeId <= 0 || empty($order)) {
+            http_response_code(400);
+            echo json_encode(['ok' => false, 'error' => 'Missing project_type_id or order.']);
+            return;
+        }
+        $existingIds = array_column($this->defaultTasks->listByType($typeId), 'default_task_id');
+        $position = 10;
+        foreach ($order as $defaultTaskId) {
+            if (!in_array($defaultTaskId, $existingIds, true)) {
+                continue;
+            }
+            $this->defaultTasks->updateSortOrder($defaultTaskId, $typeId, $position);
+            $position += 10;
+        }
+        echo json_encode(['ok' => true]);
     }
 }
