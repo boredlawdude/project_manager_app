@@ -37,6 +37,7 @@ require_once APP_ROOT . '/app/controllers/ProjectTypesController.php';
 require_once APP_ROOT . '/app/controllers/AdminSettingsController.php';
 require_once APP_ROOT . '/app/controllers/ProjectGanttController.php';
 require_once APP_ROOT . '/app/controllers/ProjectContractsController.php';
+require_once APP_ROOT . '/app/controllers/OnlyOfficeController.php';
 
 $page = $_GET['page'] ?? 'projects';
 
@@ -170,6 +171,10 @@ switch ($page) {
         break;
     case 'project_documents_delete':
         (new ProjectDocumentsController())->destroy();
+        break;
+
+    case 'onlyoffice_editor':
+        (new OnlyOfficeController())->editor();
         break;
 
     case 'admin_settings':

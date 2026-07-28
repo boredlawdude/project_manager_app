@@ -67,3 +67,45 @@ if (!function_exists('pdo')) {
         return db();
     }
 }
+
+/*
+|--------------------------------------------------------------------------
+| OnlyOffice helpers (mirrors contracts_app's includes/config.php + auth.php)
+|--------------------------------------------------------------------------
+| OO_SECRET signs the short-lived download/callback/forcesave URLs the
+| Document Server calls back on (no session cookie available there).
+| ONLYOFFICE_JWT_SECRET, if set, additionally signs the editor config/
+| command payloads when the Document Server itself has JWT enabled.
+*/
+
+defined('OO_SECRET') || define('OO_SECRET', $_ENV['OO_SECRET'] ?? '');
+defined('ONLYOFFICE_JWT_SECRET') || define('ONLYOFFICE_JWT_SECRET', $_ENV['ONLYOFFICE_JWT_SECRET'] ?? '');
+
+if (!function_exists('oo_sign')) {
+    function oo_sign(array $params): string
+    {
+        ksort($params);
+        $base = http_build_query($params);
+        return hash_hmac('sha256', $base, OO_SECRET);
+    }
+}
+
+if (!function_exists('oo_verify')) {
+    function oo_verify(array $params, string $sig): bool
+    {
+        $expected = oo_sign($params);
+        return hash_equals($expected, $sig);
+    }
+}
+
+if (!function_exists('oo_jwt_sign')) {
+    function oo_jwt_sign(array $payload, string $secret): string
+    {
+        $header = ['alg' => 'HS256', 'typ' => 'JWT'];
+        $b64 = fn($v) => rtrim(strtr(base64_encode(json_encode($v)), '+/', '-_'), '=');
+        $h = $b64($header);
+        $p = $b64($payload);
+        $sig = rtrim(strtr(base64_encode(hash_hmac('sha256', "$h.$p", $secret, true)), '+/', '-_'), '=');
+        return "$h.$p.$sig";
+    }
+}

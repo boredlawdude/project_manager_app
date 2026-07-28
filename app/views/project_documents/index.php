@@ -39,13 +39,19 @@ $pid = (int)$project['project_id'];
         <?php if (!$documentList): ?>
             <tr><td colspan="5" class="text-center text-muted py-4">No documents uploaded yet.</td></tr>
         <?php endif; ?>
-        <?php foreach ($documentList as $d): ?>
+        <?php foreach ($documentList as $d):
+            $docExt = strtolower(pathinfo((string)$d['file_name'], PATHINFO_EXTENSION));
+            $canInlineEdit = in_array($docExt, ['docx', 'doc', 'odt', 'rtf', 'txt', 'xlsx', 'xls', 'ods', 'csv', 'pptx', 'ppt', 'odp', 'pdf'], true);
+        ?>
             <tr>
                 <td><a href="/index.php?page=project_documents_download&project_document_id=<?= (int)$d['project_document_id'] ?>"><?= h($d['file_name']) ?></a></td>
                 <td><?= h(ucfirst($d['doc_type'])) ?></td>
                 <td><?= h(trim((string)($d['uploaded_by_name'] ?? '')) ?: '—') ?></td>
                 <td><?= h(fmt_date($d['created_at'] ?? null)) ?></td>
                 <td class="text-end">
+                    <?php if ($canInlineEdit): ?>
+                        <a href="/index.php?page=onlyoffice_editor&document_id=<?= (int)$d['project_document_id'] ?>" class="btn btn-sm btn-outline-success">Edit Inline</a>
+                    <?php endif; ?>
                     <form method="post" action="/index.php?page=project_documents_delete&project_id=<?= $pid ?>&project_document_id=<?= (int)$d['project_document_id'] ?>" class="d-inline" onsubmit="return confirm('Delete this document?');">
                         <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                     </form>

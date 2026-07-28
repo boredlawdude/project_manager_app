@@ -1,0 +1,142 @@
+<?php
+declare(strict_types=1);
+?>
+
+<style>
+  /* Pin the editor directly to the browser viewport (position: fixed ignores the
+     shared .container's max-width/padding entirely, unlike a vw-based hack). */
+  #onlyoffice-editor-topbar {
+    position: relative;
+    z-index: 20;
+    background: #fff;
+  }
+  /* This wrapper is the element we actually position; DocsAPI.DocEditor()
+     replaces #onlyoffice-editor itself with a bare <iframe> (dropping its id
+     entirely), so any CSS targeting #onlyoffice-editor stops applying the
+     moment the editor mounts. Positioning the WRAPPER instead survives that. */
+  #onlyoffice-editor-wrapper {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    background: #fff;
+    z-index: 10;
+  }
+  #onlyoffice-editor {
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+</style>
+
+<div id="onlyoffice-editor-topbar" class="d-flex justify-content-between align-items-center mb-0 py-2">
+  <div class="d-flex align-items-center gap-2">
+    <h1 class="h6 mb-0">Inline Document Editor</h1>
+    <span class="text-muted small">&mdash; <?= h((string)($editorConfig['document']['title'] ?? 'Document')) ?></span>
+  </div>
+  <div class="d-flex align-items-center gap-2">
+    <span id="onlyoffice-status" class="badge bg-secondary">Initializing...</span>
+    <a id="onlyoffice-back-link" href="/index.php?page=project_documents&project_id=<?= (int)$projectId ?>" class="btn btn-outline-secondary btn-sm">Back to Documents</a>
+  </div>
+</div>
+
+<div id="onlyoffice-editor-wrapper">
+  <div id="onlyoffice-editor"></div>
+</div>
+
+<script src="<?= h($documentServerUrl) ?>/web-apps/apps/api/documents/api.js"></script>
+<script>
+  function positionEditor() {
+    var topbar = document.getElementById('onlyoffice-editor-topbar');
+    var wrapper = document.getElementById('onlyoffice-editor-wrapper');
+    if (!topbar || !wrapper) return;
+    var rect = topbar.getBoundingClientRect();
+    wrapper.style.top = Math.max(0, rect.bottom) + 'px';
+  }
+  window.addEventListener('resize', positionEditor);
+  window.addEventListener('load', positionEditor);
+  positionEditor();
+
+  const statusEl = document.getElementById('onlyoffice-status');
+  function setStatus(kind, message) {
+    if (!statusEl) return;
+    statusEl.className = 'badge ' + (kind === 'ok' ? 'bg-success' : kind === 'warn' ? 'bg-warning text-dark' : kind === 'error' ? 'bg-danger' : 'bg-secondary');
+    statusEl.textContent = message;
+    if (kind === 'ok') {
+      clearTimeout(setStatus._hideTimer);
+      setStatus._hideTimer = setTimeout(function () {
+        statusEl.style.display = 'none';
+      }, 4000);
+    } else {
+      statusEl.style.display = '';
+    }
+  }
+
+  const cfg = <?= json_encode($editorConfig, JSON_UNESCAPED_SLASHES) ?>;
+  <?php if (!empty($editorToken)): ?>
+  cfg.token = <?= json_encode($editorToken, JSON_UNESCAPED_SLASHES) ?>;
+  <?php endif; ?>
+
+  const forceSaveUrl = <?= json_encode($forceSaveUrl, JSON_UNESCAPED_SLASHES) ?>;
+
+  // OnlyOffice only pushes edits back to the server when it detects the
+  // editing session truly ended (or an explicit Ctrl+S). Just navigating
+  // away doesn't wait for that, so the document list can show a stale
+  // version for a bit. Force a synchronous save via the Command Service
+  // before leaving the page.
+  function forceSaveDocument() {
+    var url = forceSaveUrl + '&key=' + encodeURIComponent(cfg.document.key);
+    return fetch(url, { method: 'POST' }).catch(function () { /* best effort */ });
+  }
+
+  document.getElementById('onlyoffice-back-link').addEventListener('click', function (e) {
+    e.preventDefault();
+    var dest = e.currentTarget.href;
+    setStatus('warn', 'Saving before leaving...');
+    forceSaveDocument().finally(function () {
+      window.location.href = dest;
+    });
+  });
+
+  // Best-effort save if the tab is closed/refreshed instead of using the button.
+  window.addEventListener('pagehide', function () {
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon(forceSaveUrl + '&key=' + encodeURIComponent(cfg.document.key));
+    }
+  });
+
+  cfg.events = Object.assign({}, cfg.events || {}, {
+    onAppReady: function () {
+      setStatus('ok', 'OnlyOffice editor is ready.');
+    },
+    onDocumentReady: function () {
+      setStatus('ok', 'Document loaded successfully.');
+    },
+    onError: function (event) {
+      const code = event && typeof event.data !== 'undefined' ? event.data.errorCode : 'unknown';
+      const desc = event && event.data && event.data.errorDescription ? event.data.errorDescription : 'No description from OnlyOffice.';
+      setStatus('error', 'OnlyOffice error ' + code + ': ' + desc);
+      console.error('OnlyOffice onError', event);
+    }
+  });
+
+  window.addEventListener('error', function (e) {
+    setStatus('error', 'Browser error: ' + (e.message || 'Unknown JavaScript error'));
+  });
+
+  if (typeof DocsAPI === 'undefined' || typeof DocsAPI.DocEditor !== 'function') {
+    setStatus('error', 'OnlyOffice API script did not load. Check ONLYOFFICE_DOCUMENT_SERVER_URL and office proxy.');
+    console.error('DocsAPI is unavailable.');
+  } else {
+    try {
+      setStatus('warn', 'OnlyOffice API loaded. Starting editor...');
+      new DocsAPI.DocEditor('onlyoffice-editor', cfg);
+    } catch (err) {
+      setStatus('error', 'Editor startup failed: ' + (err && err.message ? err.message : 'Unknown error'));
+      console.error('OnlyOffice startup exception', err);
+    }
+  }
+</script>
+
+<?php require APP_ROOT . '/app/views/layouts/footer.php'; ?>
