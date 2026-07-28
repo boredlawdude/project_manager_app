@@ -8,10 +8,9 @@ final class ProjectBudgetLine
     public function listByProject(int $projectId): array
     {
         $stmt = $this->db->prepare("
-            SELECT b.*, f.source_name AS funding_source_name, c.contract_number, c.name AS contract_name
+            SELECT b.*, f.source_name AS funding_source_name
             FROM project_budget_lines b
             LEFT JOIN project_funding_sources f ON b.funding_source_id = f.funding_source_id
-            LEFT JOIN contracts c ON b.contract_id = c.contract_id
             WHERE b.project_id = ?
             ORDER BY b.fiscal_year DESC, b.budget_line_id DESC
         ");
@@ -31,10 +30,10 @@ final class ProjectBudgetLine
         $stmt = $this->db->prepare("
             INSERT INTO project_budget_lines (
                 project_id, line_name, category, fiscal_year, budgeted_amount,
-                committed_amount, actual_amount, funding_source_id, contract_id, notes
+                committed_amount, actual_amount, funding_source_id, notes
             ) VALUES (
                 :project_id, :line_name, :category, :fiscal_year, :budgeted_amount,
-                :committed_amount, :actual_amount, :funding_source_id, :contract_id, :notes
+                :committed_amount, :actual_amount, :funding_source_id, :notes
             )
         ");
         $stmt->execute($this->params($projectId, $d));
@@ -48,7 +47,7 @@ final class ProjectBudgetLine
                 line_name = :line_name, category = :category, fiscal_year = :fiscal_year,
                 budgeted_amount = :budgeted_amount, committed_amount = :committed_amount,
                 actual_amount = :actual_amount, funding_source_id = :funding_source_id,
-                contract_id = :contract_id, notes = :notes
+                notes = :notes
             WHERE budget_line_id = :budget_line_id
         ");
         $params = $this->params(null, $d);
@@ -67,7 +66,6 @@ final class ProjectBudgetLine
             'committed_amount' => $d['committed_amount'] !== '' ? $d['committed_amount'] : 0,
             'actual_amount' => $d['actual_amount'] !== '' ? $d['actual_amount'] : 0,
             'funding_source_id' => $d['funding_source_id'] ?: null,
-            'contract_id' => $d['contract_id'] ?: null,
             'notes' => $d['notes'] ?: null,
         ];
         if ($projectId !== null) {

@@ -44,20 +44,16 @@ $pid = (int)$project['project_id'];
                 <div class="col-md-2">
                     <input type="number" name="fiscal_year" class="form-control" placeholder="FY" value="<?= h($editLine['fiscal_year'] ?? '') ?>">
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-4">
                     <select name="funding_source_id" class="form-select">
-                        <option value="">Funding source</option>
-                        <?php foreach ($fundingOptions as $f): ?>
-                            <option value="<?= (int)$f['funding_source_id'] ?>" <?= (string)($editLine['funding_source_id'] ?? '') === (string)$f['funding_source_id'] ? 'selected' : '' ?>><?= h($f['source_name']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <select name="contract_id" class="form-select">
-                        <option value="">Contract</option>
-                        <?php foreach ($contractOptions as $c): ?>
-                            <option value="<?= (int)$c['contract_id'] ?>" <?= (string)($editLine['contract_id'] ?? '') === (string)$c['contract_id'] ? 'selected' : '' ?>><?= h($c['contract_number'] ?: $c['name']) ?></option>
-                        <?php endforeach; ?>
+                        <?php if ($fundingOptions): ?>
+                            <option value="">Funding source</option>
+                            <?php foreach ($fundingOptions as $f): ?>
+                                <option value="<?= (int)$f['funding_source_id'] ?>" <?= (string)($editLine['funding_source_id'] ?? '') === (string)$f['funding_source_id'] ? 'selected' : '' ?>><?= h($f['source_name']) ?></option>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <option value="" disabled selected>No funding sources yet — add one in the Funding tab</option>
+                        <?php endif; ?>
                     </select>
                 </div>
                 <div class="col-md-4">
@@ -88,10 +84,10 @@ $pid = (int)$project['project_id'];
 
 <div class="table-responsive">
     <table class="table table-hover bg-white shadow-sm">
-        <thead><tr><th>Line</th><th>Category</th><th>FY</th><th>Budgeted</th><th>Committed</th><th>Actual</th><th>Funding</th><th>Contract</th><th></th></tr></thead>
+        <thead><tr><th>Line</th><th>Category</th><th>FY</th><th>Budgeted</th><th>Committed</th><th>Actual</th><th>Funding</th><th></th></tr></thead>
         <tbody>
         <?php if (!$budgetList): ?>
-            <tr><td colspan="9" class="text-center text-muted py-4">No budget lines yet.</td></tr>
+            <tr><td colspan="8" class="text-center text-muted py-4">No budget lines yet.</td></tr>
         <?php endif; ?>
         <?php foreach ($budgetList as $b): ?>
             <tr>
@@ -102,7 +98,6 @@ $pid = (int)$project['project_id'];
                 <td><?= h(fmt_money($b['committed_amount'])) ?></td>
                 <td><?= h(fmt_money($b['actual_amount'])) ?></td>
                 <td><?= h($b['funding_source_name'] ?? '—') ?></td>
-                <td><?= h($b['contract_number'] ?? ($b['contract_name'] ?? '—')) ?></td>
                 <td class="text-end">
                     <a href="/index.php?page=project_budget&project_id=<?= $pid ?>&edit_id=<?= (int)$b['budget_line_id'] ?>" class="btn btn-sm btn-outline-secondary">Edit</a>
                     <form method="post" action="/index.php?page=project_budget_delete&project_id=<?= $pid ?>&budget_line_id=<?= (int)$b['budget_line_id'] ?>" class="d-inline" onsubmit="return confirm('Delete this budget line?');">

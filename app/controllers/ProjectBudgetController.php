@@ -26,7 +26,6 @@ final class ProjectBudgetController
         $totals = $this->budget->totals($projectId);
         $editLine = !empty($_GET['edit_id']) ? $this->budget->find((int)$_GET['edit_id']) : null;
         $fundingOptions = $this->funding->options($projectId);
-        $contractOptions = $this->contractOptions($projectId);
         require APP_ROOT . '/app/views/project_budget/index.php';
     }
 
@@ -72,20 +71,7 @@ final class ProjectBudgetController
             'committed_amount' => trim((string)($_POST['committed_amount'] ?? '')),
             'actual_amount' => trim((string)($_POST['actual_amount'] ?? '')),
             'funding_source_id' => (int)($_POST['funding_source_id'] ?? 0) ?: null,
-            'contract_id' => (int)($_POST['contract_id'] ?? 0) ?: null,
             'notes' => trim((string)($_POST['notes'] ?? '')),
         ];
-    }
-
-    /** Contracts already linked to this project (via contracts.project_id, set in contracts_app) */
-    private function contractOptions(int $projectId): array
-    {
-        try {
-            $stmt = $this->pdo->prepare("SELECT contract_id, contract_number, name FROM contracts WHERE project_id = ? ORDER BY name");
-            $stmt->execute([$projectId]);
-            return $stmt->fetchAll();
-        } catch (Throwable $e) {
-            return [];
-        }
     }
 }
