@@ -36,6 +36,7 @@ require_once APP_ROOT . '/app/controllers/ProjectDocumentTypesController.php';
 require_once APP_ROOT . '/app/controllers/ProjectTypesController.php';
 require_once APP_ROOT . '/app/controllers/AdminSettingsController.php';
 require_once APP_ROOT . '/app/controllers/ProjectGanttController.php';
+require_once APP_ROOT . '/app/controllers/ProjectContractsController.php';
 
 $page = $_GET['page'] ?? 'projects';
 
@@ -81,6 +82,16 @@ switch ($page) {
 
     case 'project_gantt':
         (new ProjectGanttController())->index();
+        break;
+
+    case 'project_contracts':
+        (new ProjectContractsController())->index();
+        break;
+    case 'project_contracts_link':
+        (new ProjectContractsController())->link();
+        break;
+    case 'project_contracts_unlink':
+        (new ProjectContractsController())->unlink();
         break;
 
     case 'project_risks':

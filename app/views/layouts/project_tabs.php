@@ -15,6 +15,7 @@ $tabs = [
     'timeline' => ['label' => 'Timeline',         'page' => 'project_timeline'],
     'documents'=> ['label' => 'Documents',        'page' => 'project_documents'],
     'team'     => ['label' => 'Team',             'page' => 'project_team'],
+    'contracts'=> ['label' => 'Contracts',        'page' => 'project_contracts'],
 ];
 $pid = (int)($project['project_id'] ?? 0);
 ?>
@@ -31,9 +32,4 @@ $pid = (int)($project['project_id'] ?? 0);
             </a>
         </li>
     <?php endforeach; ?>
-    <li class="nav-item">
-        <a class="nav-link" href="<?= h(contracts_app_url('index.php?page=contracts&project_id=' . $pid)) ?>" target="_blank" rel="noopener">
-            Contracts &#8599;
-        </a>
-    </li>
 </ul>
