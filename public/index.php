@@ -84,6 +84,9 @@ switch ($page) {
     case 'project_gantt':
         (new ProjectGanttController())->index();
         break;
+    case 'project_gantt_update':
+        (new ProjectGanttController())->updateDates();
+        break;
 
     case 'project_contracts':
         (new ProjectContractsController())->index();

@@ -93,6 +93,19 @@ final class ProjectTask
         $this->db->prepare("DELETE FROM project_tasks WHERE task_id = ?")->execute([$id]);
     }
 
+    public function updateDates(int $id, string $startDate, string $dueDate): void
+    {
+        $stmt = $this->db->prepare("
+            UPDATE project_tasks SET start_date = :start_date, due_date = :due_date
+            WHERE task_id = :task_id
+        ");
+        $stmt->execute([
+            'start_date' => $startDate,
+            'due_date' => $dueDate,
+            'task_id' => $id,
+        ]);
+    }
+
     /**
      * Walks the depends_on chain starting at $candidateDependsOnId to see whether
      * it ever leads back to $taskId - i.e. whether making $taskId depend on
