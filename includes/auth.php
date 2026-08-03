@@ -29,6 +29,7 @@ function current_person(): array
           email,
           'Unknown'
         ) AS name,
+        title,
         department_id,
         is_active
       FROM people

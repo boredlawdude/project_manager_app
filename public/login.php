@@ -10,10 +10,10 @@ try {
 $orgName = $_orgRow['org_name'] ?? '';
 
 $email  = trim(strtolower($_POST['email'] ?? ''));
-$next   = (string)($_GET['next'] ?? $_POST['next'] ?? '/index.php?page=projects');
+$next   = (string)($_GET['next'] ?? $_POST['next'] ?? '/index.php?page=dashboard');
 $errors = [];
 
-function safe_next_local(string $next, string $fallback = '/index.php?page=projects'): string
+function safe_next_local(string $next, string $fallback = '/index.php?page=dashboard'): string
 {
     $next = trim($next);
     if ($next === '') return $fallback;
@@ -22,7 +22,7 @@ function safe_next_local(string $next, string $fallback = '/index.php?page=proje
 }
 
 if (current_person()) {
-    header("Location: /index.php?page=projects");
+    header("Location: /index.php?page=dashboard");
     exit;
 }
 

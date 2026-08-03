@@ -27,6 +27,20 @@ final class ProjectTask
         return $stmt->fetch() ?: null;
     }
 
+    public function listByAssignee(int $personId): array
+    {
+        $stmt = $this->db->prepare("
+            SELECT t.*, p.project_id AS project_id, p.project_name, p.project_code
+            FROM project_tasks t
+            JOIN projects p ON p.project_id = t.project_id
+            WHERE t.assigned_to_person_id = ?
+              AND t.status NOT IN ('completed', 'cancelled')
+            ORDER BY t.due_date IS NULL, t.due_date ASC, t.task_id ASC
+        ");
+        $stmt->execute([$personId]);
+        return $stmt->fetchAll();
+    }
+
     public function create(int $projectId, array $d, ?int $createdBy): int
     {
         $stmt = $this->db->prepare("

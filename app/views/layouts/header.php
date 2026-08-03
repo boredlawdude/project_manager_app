@@ -29,7 +29,7 @@ declare(strict_types=1);
 ?>
 <nav class="navbar navbar-expand-lg app-navbar shadow-sm mb-4">
   <div class="container">
-    <a class="navbar-brand d-flex align-items-center gap-2" href="/index.php?page=projects">
+    <a class="navbar-brand d-flex align-items-center gap-2" href="/index.php?page=dashboard">
       <?php if (!empty($_orgRow['logo_path'])): ?>
         <img src="/<?= h($_orgRow['logo_path']) ?>" alt="logo" style="max-height:28px; max-width:70px; object-fit:contain;">
       <?php endif; ?>
@@ -40,6 +40,7 @@ declare(strict_types=1);
     </button>
     <div class="collapse navbar-collapse" id="navMain">
       <ul class="navbar-nav me-auto">
+        <li class="nav-item"><a class="nav-link" href="/index.php?page=dashboard">Dashboard</a></li>
         <li class="nav-item"><a class="nav-link" href="/index.php?page=projects">Projects</a></li>
         <?php if (function_exists('is_system_admin') && is_system_admin()): ?>
           <li class="nav-item"><a class="nav-link" href="/index.php?page=admin_settings">Admin</a></li>

@@ -41,13 +41,16 @@ require_once APP_ROOT . '/app/controllers/AdminProjectImportController.php';
 require_once APP_ROOT . '/app/controllers/ProjectGanttController.php';
 require_once APP_ROOT . '/app/controllers/ProjectContractsController.php';
 require_once APP_ROOT . '/app/controllers/OnlyOfficeController.php';
+require_once APP_ROOT . '/app/controllers/DashboardController.php';
 
 $page = $_GET['page'] ?? 'projects';
 
 switch ($page) {
     case 'projects':
-    case 'dashboard':
         (new ProjectsController())->index();
+        break;
+    case 'dashboard':
+        (new DashboardController())->index();
         break;
     case 'projects_create':
         (new ProjectsController())->create();
