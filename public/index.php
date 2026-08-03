@@ -202,6 +202,12 @@ switch ($page) {
     case 'admin_settings_update':
         (new AdminSettingsController())->update();
         break;
+    case 'admin_organization':
+        (new AdminSettingsController())->organization();
+        break;
+    case 'admin_organization_save':
+        (new AdminSettingsController())->saveOrganization();
+        break;
 
     case 'admin_projects_import':
         (new AdminProjectImportController())->index();

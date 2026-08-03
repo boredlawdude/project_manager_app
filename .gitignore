@@ -2,5 +2,7 @@
 /.env
 /storage/projects/*
 !/storage/projects/.gitkeep
+/public/uploads/*
+!/public/uploads/.gitkeep
 .DS_Store
 *_export.sql

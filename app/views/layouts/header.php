@@ -19,9 +19,22 @@ declare(strict_types=1);
 </head>
 <body class="bg-light">
 
+<?php
+  try {
+      $_orgRow = db()->query('SELECT org_name, logo_path FROM organization_settings ORDER BY id ASC LIMIT 1')->fetch() ?: [];
+  } catch (Throwable $e) {
+      $_orgRow = [];
+  }
+  $_orgName = $_orgRow['org_name'] ?? '';
+?>
 <nav class="navbar navbar-expand-lg app-navbar shadow-sm mb-4">
   <div class="container">
-    <a class="navbar-brand" href="/index.php?page=projects">Project Manager</a>
+    <a class="navbar-brand d-flex align-items-center gap-2" href="/index.php?page=projects">
+      <?php if (!empty($_orgRow['logo_path'])): ?>
+        <img src="/<?= h($_orgRow['logo_path']) ?>" alt="logo" style="max-height:28px; max-width:70px; object-fit:contain;">
+      <?php endif; ?>
+      Project Manager<?= $_orgName !== '' ? ' for ' . h($_orgName) : '' ?>
+    </a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
       <span class="navbar-toggler-icon"></span>
     </button>

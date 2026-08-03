@@ -16,6 +16,17 @@ require APP_ROOT . '/app/views/layouts/header.php';
 <?php endif; ?>
 
 <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold">Organization</div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-6 col-md-3">
+                <a href="/index.php?page=admin_organization" class="btn btn-outline-primary w-100">Organization Profile</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
     <div class="card-header bg-white fw-semibold">Dropdown Lists</div>
     <div class="card-body">
         <div class="row g-3">

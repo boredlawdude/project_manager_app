@@ -2,6 +2,13 @@
 declare(strict_types=1);
 require_once __DIR__ . '/../includes/init.php';
 
+try {
+    $_orgRow = db()->query('SELECT org_name, logo_path FROM organization_settings ORDER BY id ASC LIMIT 1')->fetch() ?: [];
+} catch (Throwable $e) {
+    $_orgRow = [];
+}
+$orgName = $_orgRow['org_name'] ?? '';
+
 $email  = trim(strtolower($_POST['email'] ?? ''));
 $next   = (string)($_GET['next'] ?? $_POST['next'] ?? '/index.php?page=projects');
 $errors = [];
@@ -49,8 +56,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </style>
 </head>
 <body>
-  <div class="login-header d-flex align-items-center px-4 py-3 mb-5">
-    <div class="text-white fw-bold fs-5"><?= h(APP_NAME) ?></div>
+  <div class="login-header d-flex align-items-center justify-content-between px-4 py-3 mb-5">
+    <div>
+      <div class="text-white fw-bold fs-5"><?= h(APP_NAME) ?></div>
+      <?php if ($orgName !== ''): ?>
+        <div class="text-white opacity-75 small"><?= h($orgName) ?></div>
+      <?php endif; ?>
+    </div>
+    <?php if (!empty($_orgRow['logo_path'])): ?>
+      <img src="/<?= h($_orgRow['logo_path']) ?>" alt="<?= h($orgName) ?> logo" style="max-height:48px; max-width:160px; object-fit:contain;">
+    <?php endif; ?>
   </div>
 
   <div class="container">
