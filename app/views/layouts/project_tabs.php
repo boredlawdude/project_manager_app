@@ -9,6 +9,7 @@ $tabs = [
     'tasks'    => ['label' => 'Tasks',            'page' => 'project_tasks'],
     'gantt'    => ['label' => 'Gantt Chart',      'page' => 'project_gantt'],
     'risks'    => ['label' => 'Risks',            'page' => 'project_risks'],
+    'notes'    => ['label' => 'Notes',            'page' => 'project_notes'],
     'budget'   => ['label' => 'Budget',           'page' => 'project_budget'],
     'funding'  => ['label' => 'Funding',          'page' => 'project_funding'],
     'meetings' => ['label' => 'Meetings',         'page' => 'project_meetings'],

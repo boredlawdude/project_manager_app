@@ -6,6 +6,7 @@ require_login();
 require_once APP_ROOT . '/app/models/Project.php';
 require_once APP_ROOT . '/app/models/ProjectTask.php';
 require_once APP_ROOT . '/app/models/ProjectRisk.php';
+require_once APP_ROOT . '/app/models/ProjectNote.php';
 require_once APP_ROOT . '/app/models/ProjectBudgetLine.php';
 require_once APP_ROOT . '/app/models/ProjectFundingSource.php';
 require_once APP_ROOT . '/app/models/ProjectMeeting.php';
@@ -23,6 +24,7 @@ require_once APP_ROOT . '/app/models/PmSetting.php';
 require_once APP_ROOT . '/app/controllers/ProjectsController.php';
 require_once APP_ROOT . '/app/controllers/ProjectTasksController.php';
 require_once APP_ROOT . '/app/controllers/ProjectRisksController.php';
+require_once APP_ROOT . '/app/controllers/ProjectNotesController.php';
 require_once APP_ROOT . '/app/controllers/ProjectBudgetController.php';
 require_once APP_ROOT . '/app/controllers/ProjectFundingController.php';
 require_once APP_ROOT . '/app/controllers/ProjectMeetingsController.php';
@@ -35,6 +37,7 @@ require_once APP_ROOT . '/app/controllers/ProjectFundingSourceTypesController.ph
 require_once APP_ROOT . '/app/controllers/ProjectDocumentTypesController.php';
 require_once APP_ROOT . '/app/controllers/ProjectTypesController.php';
 require_once APP_ROOT . '/app/controllers/AdminSettingsController.php';
+require_once APP_ROOT . '/app/controllers/AdminProjectImportController.php';
 require_once APP_ROOT . '/app/controllers/ProjectGanttController.php';
 require_once APP_ROOT . '/app/controllers/ProjectContractsController.php';
 require_once APP_ROOT . '/app/controllers/OnlyOfficeController.php';
@@ -111,6 +114,19 @@ switch ($page) {
         (new ProjectRisksController())->destroy();
         break;
 
+    case 'project_notes':
+        (new ProjectNotesController())->index();
+        break;
+    case 'project_notes_store':
+        (new ProjectNotesController())->store();
+        break;
+    case 'project_notes_update':
+        (new ProjectNotesController())->update();
+        break;
+    case 'project_notes_delete':
+        (new ProjectNotesController())->destroy();
+        break;
+
     case 'project_budget':
         (new ProjectBudgetController())->index();
         break;
@@ -185,6 +201,13 @@ switch ($page) {
         break;
     case 'admin_settings_update':
         (new AdminSettingsController())->update();
+        break;
+
+    case 'admin_projects_import':
+        (new AdminProjectImportController())->index();
+        break;
+    case 'admin_projects_import_upload':
+        (new AdminProjectImportController())->upload();
         break;
 
     case 'admin_project_statuses':
