@@ -34,6 +34,7 @@ final class ProjectTasksController
         $dependencyOptions = $this->tasks->dependencyOptions($projectId, $editTask['task_id'] ?? null);
         $taskErrors = $_SESSION['task_errors'] ?? [];
         unset($_SESSION['task_errors']);
+        [$ganttTasks, $ganttSkippedCount] = $this->tasks->toGanttTasks($taskList);
 
         $importableDefaultTasks = [];
         if (!empty($project['project_type_id'])) {
@@ -130,6 +131,46 @@ final class ProjectTasksController
         }
         header('Location: /index.php?page=project_tasks&project_id=' . $projectId);
         exit;
+    }
+
+    /**
+     * AJAX endpoint used by the tasks page to populate the Add/Edit Task card
+     * without a full page reload. Pass task_id=0 to fetch the blank "Add Task"
+     * state (including the full dependency option list).
+     */
+    public function get(): void
+    {
+        header('Content-Type: application/json');
+
+        $projectId = (int)($_GET['project_id'] ?? 0);
+        $taskId = (int)($_GET['task_id'] ?? 0);
+
+        $project = $this->projects->find($projectId);
+        if (!$project) {
+            http_response_code(404);
+            echo json_encode(['ok' => false, 'error' => 'Project not found.']);
+            return;
+        }
+
+        $task = null;
+        if ($taskId > 0) {
+            $task = $this->tasks->find($taskId);
+            if (!$task || (int)$task['project_id'] !== $projectId) {
+                http_response_code(404);
+                echo json_encode(['ok' => false, 'error' => 'Task not found.']);
+                return;
+            }
+        }
+
+        $dependencyOptions = $this->tasks->dependencyOptions($projectId, $task['task_id'] ?? null);
+        echo json_encode([
+            'ok' => true,
+            'task' => $task,
+            'dependencyOptions' => array_map(
+                static fn(array $o): array => ['task_id' => (int)$o['task_id'], 'task_name' => $o['task_name']],
+                $dependencyOptions
+            ),
+        ]);
     }
 
     private function collect(): array

@@ -72,11 +72,14 @@ $pid = (int)$project['project_id'];
 <?php endif; ?>
 
 <div class="card shadow-sm mb-4">
-    <div class="card-header"><?= $editTask ? 'Edit Task' : 'Add Task' ?></div>
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span id="taskFormTitle"><?= $editTask ? 'Edit Task' : 'Add Task' ?></span>
+        <a href="/index.php?page=project_tasks&project_id=<?= $pid ?>" id="taskFormCancelBtn" class="btn btn-outline-secondary btn-sm" style="<?= $editTask ? '' : 'display:none;' ?>">Cancel</a>
+    </div>
     <div class="card-body">
-        <form method="post" action="/index.php?page=<?= $editTask ? 'project_tasks_update' : 'project_tasks_store' ?>">
+        <form method="post" id="taskForm" action="/index.php?page=<?= $editTask ? 'project_tasks_update' : 'project_tasks_store' ?>">
             <input type="hidden" name="project_id" value="<?= $pid ?>">
-            <?php if ($editTask): ?><input type="hidden" name="task_id" value="<?= (int)$editTask['task_id'] ?>"><?php endif; ?>
+            <input type="hidden" name="task_id" id="taskFormTaskId" value="<?= (int)($editTask['task_id'] ?? 0) ?>">
             <div class="row g-2">
                 <div class="col-md-4">
                     <input type="text" name="task_name" class="form-control" placeholder="Task name *" required
@@ -133,15 +136,19 @@ $pid = (int)$project['project_id'];
                 </div>
             </div>
             <div class="mt-2">
-                <button type="submit" class="btn btn-primary btn-sm"><?= $editTask ? 'Save Changes' : 'Add Task' ?></button>
-                <?php if ($editTask): ?>
-                    <a href="/index.php?page=project_tasks&project_id=<?= $pid ?>" class="btn btn-outline-secondary btn-sm">Cancel</a>
-                <?php endif; ?>
+                <button type="submit" class="btn btn-primary btn-sm" id="taskFormSubmitBtn"><?= $editTask ? 'Save Changes' : 'Add Task' ?></button>
             </div>
         </form>
     </div>
 </div>
 
+<?php
+$statusBadgeClasses = [
+    'completed' => 'text-bg-success',
+    'in_progress' => 'text-bg-warning',
+    'blocked' => 'text-bg-danger',
+];
+?>
 <div class="table-responsive">
     <table class="table table-hover bg-white shadow-sm">
         <thead><tr><th>Task</th><th>Status</th><th>Priority</th><th>Dependency</th><th>Assignee</th><th>Due</th><th></th></tr></thead>
@@ -153,10 +160,11 @@ $pid = (int)$project['project_id'];
             <?php
                 $isDependent = ($t['dependency_type'] ?? 'independent') === 'dependent';
                 $depMet = !$isDependent || empty($t['depends_on_task_id']) || ($t['depends_on_status'] ?? null) === 'completed';
+                $isActiveRow = !empty($editTask) && (int)$editTask['task_id'] === (int)$t['task_id'];
             ?>
-            <tr>
+            <tr class="task-row <?= $isActiveRow ? 'table-active' : '' ?>" data-task-id="<?= (int)$t['task_id'] ?>" style="cursor:pointer;" title="Click to edit this task">
                 <td><?= h($t['task_name']) ?></td>
-                <td><span class="badge text-bg-secondary"><?= h(str_replace('_',' ',$t['status'])) ?></span></td>
+                <td><span class="badge <?= $statusBadgeClasses[$t['status']] ?? 'text-bg-secondary' ?>"><?= h(str_replace('_',' ',$t['status'])) ?></span></td>
                 <td><?= h($t['priority']) ?></td>
                 <td>
                     <?php if (!$isDependent): ?>
@@ -169,10 +177,10 @@ $pid = (int)$project['project_id'];
                     <?php endif; ?>
                 </td>
                 <td><?= h(trim((string)($t['assignee_name'] ?? '')) ?: '—') ?></td>
-                <td><?= h(fmt_date($t['due_date'] ?? null)) ?></td>
+                <td class="task-due-date-cell" data-due-date="<?= h($t['due_date'] ?? '') ?>"><?= h(fmt_date($t['due_date'] ?? null)) ?></td>
                 <td class="text-end">
-                    <a href="/index.php?page=project_tasks&project_id=<?= $pid ?>&edit_id=<?= (int)$t['task_id'] ?>" class="btn btn-sm btn-outline-secondary">Edit</a>
-                    <form method="post" action="/index.php?page=project_tasks_delete&project_id=<?= $pid ?>&task_id=<?= (int)$t['task_id'] ?>" class="d-inline" onsubmit="return confirm('Delete this task?');">
+                    <a href="/index.php?page=project_tasks&project_id=<?= $pid ?>&edit_id=<?= (int)$t['task_id'] ?>" class="btn btn-sm btn-outline-secondary task-edit-link" data-task-id="<?= (int)$t['task_id'] ?>">Edit</a>
+                    <form method="post" action="/index.php?page=project_tasks_delete&project_id=<?= $pid ?>&task_id=<?= (int)$t['task_id'] ?>" class="d-inline task-delete-form" onsubmit="return confirm('Delete this task?');">
                         <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                     </form>
                 </td>
@@ -184,15 +192,128 @@ $pid = (int)$project['project_id'];
 
 <script>
 (function () {
+    var pid = <?= $pid ?>;
     var typeSel = document.getElementById('dependencyTypeSelect');
     var wrap = document.getElementById('dependsOnWrap');
-    function toggle() { wrap.style.display = typeSel.value === 'dependent' ? '' : 'none'; }
-    if (typeSel && wrap) {
-        typeSel.addEventListener('change', toggle);
-        toggle();
+    var dependsOnSelect = wrap ? wrap.querySelector('select[name="depends_on_task_id"]') : null;
+
+    function toggleDependsOnVisibility() {
+        if (typeSel && wrap) {
+            wrap.style.display = typeSel.value === 'dependent' ? '' : 'none';
+        }
     }
+    if (typeSel) {
+        typeSel.addEventListener('change', toggleDependsOnVisibility);
+        toggleDependsOnVisibility();
+    }
+
+    var form = document.getElementById('taskForm');
+    var titleEl = document.getElementById('taskFormTitle');
+    var cancelBtn = document.getElementById('taskFormCancelBtn');
+    var submitBtn = document.getElementById('taskFormSubmitBtn');
+    var taskIdField = document.getElementById('taskFormTaskId');
+    var fields = {
+        task_name: form.querySelector('[name="task_name"]'),
+        status: form.querySelector('[name="status"]'),
+        priority: form.querySelector('[name="priority"]'),
+        assigned_to_person_id: form.querySelector('[name="assigned_to_person_id"]'),
+        due_date: form.querySelector('[name="due_date"]'),
+        start_date: form.querySelector('[name="start_date"]'),
+        description: form.querySelector('[name="description"]'),
+    };
+
+    function highlightRow(taskId) {
+        document.querySelectorAll('.task-row').forEach(function (row) {
+            row.classList.toggle('table-active', taskId && row.getAttribute('data-task-id') === String(taskId));
+        });
+    }
+
+    function populateDependsOnOptions(options, selectedId) {
+        if (!dependsOnSelect) { return; }
+        dependsOnSelect.innerHTML = '';
+        var blank = document.createElement('option');
+        blank.value = '';
+        blank.textContent = '— Select task —';
+        dependsOnSelect.appendChild(blank);
+        options.forEach(function (opt) {
+            var o = document.createElement('option');
+            o.value = opt.task_id;
+            o.textContent = opt.task_name;
+            if (selectedId && String(opt.task_id) === String(selectedId)) { o.selected = true; }
+            dependsOnSelect.appendChild(o);
+        });
+    }
+
+    function loadTask(taskId) {
+        fetch('/index.php?page=project_tasks_get&project_id=' + pid + '&task_id=' + taskId)
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (!data.ok) { return; }
+                var t = data.task;
+                populateDependsOnOptions(data.dependencyOptions, t ? t.depends_on_task_id : null);
+
+                if (t) {
+                    form.action = '/index.php?page=project_tasks_update';
+                    taskIdField.value = t.task_id;
+                    titleEl.textContent = 'Edit Task';
+                    submitBtn.textContent = 'Save Changes';
+                    cancelBtn.style.display = '';
+                    fields.task_name.value = t.task_name || '';
+                    fields.status.value = t.status || 'not_started';
+                    fields.priority.value = t.priority || 'medium';
+                    fields.assigned_to_person_id.value = t.assigned_to_person_id || '';
+                    fields.due_date.value = t.due_date || '';
+                    fields.start_date.value = t.start_date || '';
+                    typeSel.value = t.dependency_type || 'independent';
+                    fields.description.value = t.description || '';
+                    highlightRow(t.task_id);
+                } else {
+                    form.action = '/index.php?page=project_tasks_store';
+                    taskIdField.value = '';
+                    titleEl.textContent = 'Add Task';
+                    submitBtn.textContent = 'Add Task';
+                    cancelBtn.style.display = 'none';
+                    fields.task_name.value = '';
+                    fields.status.value = 'not_started';
+                    fields.priority.value = 'medium';
+                    fields.assigned_to_person_id.value = '';
+                    fields.due_date.value = '';
+                    fields.start_date.value = '';
+                    typeSel.value = 'independent';
+                    fields.description.value = '';
+                    highlightRow(null);
+                }
+                toggleDependsOnVisibility();
+            });
+    }
+
+    document.querySelectorAll('.task-row').forEach(function (row) {
+        row.addEventListener('click', function () {
+            loadTask(row.getAttribute('data-task-id'));
+        });
+    });
+
+    document.querySelectorAll('.task-edit-link').forEach(function (link) {
+        link.addEventListener('click', function (ev) {
+            ev.preventDefault();
+            ev.stopPropagation();
+            loadTask(link.getAttribute('data-task-id'));
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    });
+
+    document.querySelectorAll('.task-delete-form').forEach(function (delForm) {
+        delForm.addEventListener('click', function (ev) { ev.stopPropagation(); });
+    });
+
+    cancelBtn.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        loadTask(0);
+    });
 })();
 </script>
+
+<?php require APP_ROOT . '/app/views/layouts/gantt_chart.php'; ?>
 
 <?php require APP_ROOT . '/app/views/layouts/footer.php'; ?>
 

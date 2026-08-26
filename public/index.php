@@ -86,6 +86,9 @@ switch ($page) {
     case 'project_tasks_import_defaults':
         (new ProjectTasksController())->importDefaults();
         break;
+    case 'project_tasks_get':
+        (new ProjectTasksController())->get();
+        break;
 
     case 'project_gantt':
         (new ProjectGanttController())->index();

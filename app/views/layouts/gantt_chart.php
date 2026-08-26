@@ -1,12 +1,10 @@
 <?php
 declare(strict_types=1);
-$pageTitle = 'Gantt Chart — ' . $project['project_name'];
-require APP_ROOT . '/app/views/layouts/header.php';
-$activeTab = 'gantt';
-require APP_ROOT . '/app/views/layouts/project_tabs.php';
-$pid = (int)$project['project_id'];
+/**
+ * Inline Gantt chart, embedded below the task list on the Tasks page.
+ * Expects $ganttTasks, $ganttSkippedCount, and $pid to be set by the including view.
+ */
 ?>
-
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt@1.2.2/dist/frappe-gantt.min.css">
 <style>
     #gantt-container { background: #fff; overflow-x: auto; }
@@ -17,34 +15,32 @@ $pid = (int)$project['project_id'];
     .gantt-legend .badge { font-weight: 400; }
 </style>
 
+<h2 class="h6 mt-4 mb-2">Gantt Chart</h2>
 <div class="d-flex justify-content-between align-items-center mb-2">
     <div class="gantt-legend d-flex gap-2 align-items-center">
         <span class="badge" style="background:#a3a3a3;">&nbsp;</span> <span class="small text-muted me-2">Not started / In progress</span>
         <span class="badge" style="background:#dc3545;">&nbsp;</span> <span class="small text-muted me-2">Blocked</span>
         <span class="badge" style="background:#198754;">&nbsp;</span> <span class="small text-muted">Completed</span>
     </div>
-    <div class="d-flex align-items-center gap-2">
-        <span id="gantt-save-status" class="small text-muted"></span>
-        <a href="/index.php?page=project_tasks&project_id=<?= $pid ?>" class="btn btn-sm btn-outline-secondary">Manage Tasks</a>
-    </div>
+    <span id="gantt-save-status" class="small text-muted"></span>
 </div>
 
 <?php if ($ganttTasks): ?>
     <div class="alert alert-info py-2 small mb-2">
-        Drag a bar to move it, or drag its edges to resize it — start/due dates are saved automatically.
+        Drag a bar to move it, or drag its edges to resize it — start/due dates are saved automatically and the task list above updates to match.
     </div>
 <?php endif; ?>
 
-<?php if ($skippedCount > 0): ?>
+<?php if ($ganttSkippedCount > 0): ?>
     <div class="alert alert-warning py-2 small">
-        <?= (int)$skippedCount ?> task(s) are not shown because they have no start or due date set.
+        <?= (int)$ganttSkippedCount ?> task(s) are not shown because they have no start or due date set.
     </div>
 <?php endif; ?>
 
 <div class="card shadow-sm mb-4">
     <div class="card-body p-0">
         <?php if (!$ganttTasks): ?>
-            <div class="text-center text-muted py-5">No tasks with dates to display yet. Add start/due dates on the Tasks tab.</div>
+            <div class="text-center text-muted py-5">No tasks with dates to display yet. Add start/due dates above.</div>
         <?php else: ?>
             <div id="gantt-container"><svg id="gantt"></svg></div>
         <?php endif; ?>
@@ -55,7 +51,7 @@ $pid = (int)$project['project_id'];
 <script src="https://cdn.jsdelivr.net/npm/frappe-gantt@1.2.2/dist/frappe-gantt.umd.min.js"></script>
 <script>
     var ganttTasks = <?= json_encode($ganttTasks, JSON_UNESCAPED_SLASHES) ?>;
-    var ganttProjectId = <?= $pid ?>;
+    var ganttProjectId = <?= (int)$pid ?>;
 
     function formatLocalDate(d) {
         var y = d.getFullYear();
@@ -86,7 +82,21 @@ $pid = (int)$project['project_id'];
                 })
                     .then(function (res) { return res.json(); })
                     .then(function (data) {
-                        statusEl.textContent = data.ok ? 'Saved.' : 'Failed to save: ' + (data.error || 'unknown error');
+                        if (data.ok) {
+                            statusEl.textContent = 'Saved.';
+                            var row = document.querySelector('.task-row[data-task-id="' + task.id + '"]');
+                            if (row) {
+                                var cell = row.querySelector('.task-due-date-cell');
+                                if (cell) {
+                                    var dueDate = formatLocalDate(end);
+                                    var parts = dueDate.split('-');
+                                    cell.setAttribute('data-due-date', dueDate);
+                                    cell.textContent = parts[1] + '/' + parts[2] + '/' + parts[0];
+                                }
+                            }
+                        } else {
+                            statusEl.textContent = 'Failed to save: ' + (data.error || 'unknown error');
+                        }
                     })
                     .catch(function () {
                         statusEl.textContent = 'Failed to save (network error).';
@@ -96,5 +106,3 @@ $pid = (int)$project['project_id'];
     });
 </script>
 <?php endif; ?>
-
-<?php require APP_ROOT . '/app/views/layouts/footer.php'; ?>
