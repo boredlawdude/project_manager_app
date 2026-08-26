@@ -108,11 +108,17 @@ $pid = (int)$project['project_id'];
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <input type="date" name="due_date" class="form-control" value="<?= h($editTask['due_date'] ?? '') ?>" title="Due date">
+                    <label class="form-label small mb-0">Due Date (Projected)</label>
+                    <input type="date" name="due_date" class="form-control" value="<?= h($editTask['due_date'] ?? '') ?>">
                 </div>
                 <div class="col-md-2">
                     <label class="form-label small mb-0">Start Date</label>
                     <input type="date" name="start_date" class="form-control" value="<?= h($editTask['start_date'] ?? '') ?>">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small mb-0">Completed Date</label>
+                    <input type="date" name="completed_date" id="completedDateInput" class="form-control"
+                           value="<?= h(!empty($editTask['completed_at']) ? substr((string)$editTask['completed_at'], 0, 10) : '') ?>">
                 </div>
                 <div class="col-md-3">
                     <label class="form-label small mb-0">Dependency</label>
@@ -219,8 +225,26 @@ $statusBadgeClasses = [
         assigned_to_person_id: form.querySelector('[name="assigned_to_person_id"]'),
         due_date: form.querySelector('[name="due_date"]'),
         start_date: form.querySelector('[name="start_date"]'),
+        completed_date: form.querySelector('[name="completed_date"]'),
         description: form.querySelector('[name="description"]'),
     };
+
+    function todayLocalDate() {
+        var now = new Date();
+        var m = String(now.getMonth() + 1).padStart(2, '0');
+        var d = String(now.getDate()).padStart(2, '0');
+        return now.getFullYear() + '-' + m + '-' + d;
+    }
+
+    fields.status.addEventListener('change', function () {
+        if (fields.status.value === 'completed') {
+            if (!fields.completed_date.value) {
+                fields.completed_date.value = todayLocalDate();
+            }
+        } else {
+            fields.completed_date.value = '';
+        }
+    });
 
     function highlightRow(taskId) {
         document.querySelectorAll('.task-row').forEach(function (row) {
@@ -264,6 +288,7 @@ $statusBadgeClasses = [
                     fields.assigned_to_person_id.value = t.assigned_to_person_id || '';
                     fields.due_date.value = t.due_date || '';
                     fields.start_date.value = t.start_date || '';
+                    fields.completed_date.value = t.completed_at ? String(t.completed_at).substring(0, 10) : '';
                     typeSel.value = t.dependency_type || 'independent';
                     fields.description.value = t.description || '';
                     highlightRow(t.task_id);
@@ -279,6 +304,7 @@ $statusBadgeClasses = [
                     fields.assigned_to_person_id.value = '';
                     fields.due_date.value = '';
                     fields.start_date.value = '';
+                    fields.completed_date.value = '';
                     typeSel.value = 'independent';
                     fields.description.value = '';
                     highlightRow(null);

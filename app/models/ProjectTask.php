@@ -43,15 +43,18 @@ final class ProjectTask
 
     public function create(int $projectId, array $d, ?int $createdBy): int
     {
+        $completedAt = $d['status'] === 'completed'
+            ? (($d['completed_date'] ?? '') !== '' ? $d['completed_date'] : date('Y-m-d'))
+            : null;
         $stmt = $this->db->prepare("
             INSERT INTO project_tasks (
                 project_id, parent_task_id, task_name, description, status, priority,
                 dependency_type, depends_on_task_id,
-                assigned_to_person_id, start_date, due_date, created_by_person_id
+                assigned_to_person_id, start_date, due_date, completed_at, created_by_person_id
             ) VALUES (
                 :project_id, :parent_task_id, :task_name, :description, :status, :priority,
                 :dependency_type, :depends_on_task_id,
-                :assigned_to_person_id, :start_date, :due_date, :created_by_person_id
+                :assigned_to_person_id, :start_date, :due_date, :completed_at, :created_by_person_id
             )
         ");
         $stmt->execute([
@@ -66,6 +69,7 @@ final class ProjectTask
             'assigned_to_person_id' => $d['assigned_to_person_id'] ?: null,
             'start_date' => $d['start_date'] ?: null,
             'due_date' => $d['due_date'] ?: null,
+            'completed_at' => $completedAt,
             'created_by_person_id' => $createdBy,
         ]);
         return (int)$this->db->lastInsertId();
@@ -73,7 +77,9 @@ final class ProjectTask
 
     public function update(int $id, array $d): void
     {
-        $completedAt = $d['status'] === 'completed' ? ", completed_at = COALESCE(completed_at, NOW())" : ", completed_at = NULL";
+        $completedAt = $d['status'] === 'completed'
+            ? (($d['completed_date'] ?? '') !== '' ? $d['completed_date'] : date('Y-m-d'))
+            : null;
         $stmt = $this->db->prepare("
             UPDATE project_tasks SET
                 task_name = :task_name,
@@ -84,8 +90,8 @@ final class ProjectTask
                 depends_on_task_id = :depends_on_task_id,
                 assigned_to_person_id = :assigned_to_person_id,
                 start_date = :start_date,
-                due_date = :due_date
-                $completedAt
+                due_date = :due_date,
+                completed_at = :completed_at
             WHERE task_id = :task_id
         ");
         $stmt->execute([
@@ -98,6 +104,7 @@ final class ProjectTask
             'assigned_to_person_id' => $d['assigned_to_person_id'] ?: null,
             'start_date' => $d['start_date'] ?: null,
             'due_date' => $d['due_date'] ?: null,
+            'completed_at' => $completedAt,
             'task_id' => $id,
         ]);
     }

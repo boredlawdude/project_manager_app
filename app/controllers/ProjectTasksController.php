@@ -185,6 +185,7 @@ final class ProjectTasksController
             'assigned_to_person_id' => (int)($_POST['assigned_to_person_id'] ?? 0) ?: null,
             'start_date' => trim((string)($_POST['start_date'] ?? '')),
             'due_date' => trim((string)($_POST['due_date'] ?? '')),
+            'completed_date' => trim((string)($_POST['completed_date'] ?? '')),
             'parent_task_id' => (int)($_POST['parent_task_id'] ?? 0) ?: null,
         ];
     }
