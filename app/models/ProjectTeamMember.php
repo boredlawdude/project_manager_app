@@ -38,4 +38,24 @@ final class ProjectTeamMember
         $stmt = $this->db->prepare("DELETE FROM project_team_members WHERE project_id = ? AND person_id = ?");
         $stmt->execute([$projectId, $personId]);
     }
+
+    /**
+     * All projects a given person is a team member on, for the dashboard's
+     * "My Projects" table.
+     */
+    public function listByPerson(int $personId): array
+    {
+        $stmt = $this->db->prepare("
+            SELECT m.project_id, m.project_role, m.is_lead,
+                   p.project_name, p.project_code, p.status,
+                   CONCAT(pm.first_name, ' ', pm.last_name) AS project_manager_name
+            FROM project_team_members m
+            JOIN projects p ON p.project_id = m.project_id
+            LEFT JOIN people pm ON p.project_manager_person_id = pm.person_id
+            WHERE m.person_id = ?
+            ORDER BY m.is_lead DESC, p.project_name ASC
+        ");
+        $stmt->execute([$personId]);
+        return $stmt->fetchAll();
+    }
 }

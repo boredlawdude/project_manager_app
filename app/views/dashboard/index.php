@@ -71,4 +71,43 @@ $today = new DateTimeImmutable('today');
   </div>
 </div>
 
+<div class="card shadow-sm mt-4">
+  <div class="card-header bg-white fw-semibold">
+    Projects You Are a Team Member On
+  </div>
+  <div class="card-body p-0">
+    <?php if (empty($myProjects)): ?>
+      <div class="p-4 text-muted">You are not currently listed as a team member on any projects.</div>
+    <?php else: ?>
+      <table class="table table-hover mb-0 align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Project</th>
+            <th>Your Role</th>
+            <th>Project Manager</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php foreach ($myProjects as $proj): ?>
+            <tr>
+              <td>
+                <?= h($proj['project_name']) ?>
+                <?php if (!empty($proj['is_lead'])): ?><span class="badge bg-info-subtle text-dark border ms-1">Lead</span><?php endif; ?>
+              </td>
+              <td><?= h($proj['project_role'] ?: '—') ?></td>
+              <td><?= h(trim((string)($proj['project_manager_name'] ?? '')) ?: '—') ?></td>
+              <td><span class="badge text-bg-secondary text-uppercase"><?= h($proj['status'] ?? '') ?></span></td>
+              <td>
+                <a href="/index.php?page=projects_show&project_id=<?= (int)$proj['project_id'] ?>" class="btn btn-sm btn-outline-primary">View Project</a>
+              </td>
+            </tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+    <?php endif; ?>
+  </div>
+</div>
+
 <?php require APP_ROOT . '/app/views/layouts/footer.php'; ?>

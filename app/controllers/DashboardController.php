@@ -5,11 +5,13 @@ final class DashboardController
 {
     private PDO $pdo;
     private ProjectTask $tasks;
+    private ProjectTeamMember $teamMembers;
 
     public function __construct()
     {
         $this->pdo = db();
         $this->tasks = new ProjectTask($this->pdo);
+        $this->teamMembers = new ProjectTeamMember($this->pdo);
     }
 
     public function index(): void
@@ -25,6 +27,7 @@ final class DashboardController
         }
 
         $myTasks = $personId > 0 ? $this->tasks->listByAssignee($personId) : [];
+        $myProjects = $personId > 0 ? $this->teamMembers->listByPerson($personId) : [];
 
         require APP_ROOT . '/app/views/dashboard/index.php';
     }
