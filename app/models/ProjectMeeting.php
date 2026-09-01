@@ -22,7 +22,7 @@ final class ProjectMeeting
     public function attendees(int $meetingId): array
     {
         $stmt = $this->db->prepare("
-            SELECT a.person_id, a.attended, CONCAT(p.first_name,' ',p.last_name) AS name
+            SELECT a.person_id, a.attended, CONCAT(p.first_name,' ',p.last_name) AS name, p.email
             FROM project_meeting_attendees a
             JOIN people p ON p.person_id = a.person_id
             WHERE a.meeting_id = ?

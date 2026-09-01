@@ -7,6 +7,19 @@ require APP_ROOT . '/app/views/layouts/project_tabs.php';
 $pid = (int)$project['project_id'];
 ?>
 
+<?php if (!empty($emailSuccess)): ?>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <?= h($emailSuccess) ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+<?php endif; ?>
+<?php if (!empty($emailError)): ?>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <?= h($emailError) ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+<?php endif; ?>
+
 <div class="card shadow-sm mb-4">
     <div class="card-header"><?= $editMeeting ? 'Edit Meeting' : 'Add Meeting' ?></div>
     <div class="card-body">
@@ -54,19 +67,25 @@ $pid = (int)$project['project_id'];
 
 <div class="table-responsive">
     <table class="table table-hover bg-white shadow-sm">
-        <thead><tr><th>Date</th><th>Type</th><th>Location</th><th></th></tr></thead>
+        <thead><tr><th>Date</th><th>Type</th><th>Location</th><th>Minutes</th><th></th></tr></thead>
         <tbody>
         <?php if (!$meetingList): ?>
-            <tr><td colspan="4" class="text-center text-muted py-4">No meetings logged yet.</td></tr>
+            <tr><td colspan="5" class="text-center text-muted py-4">No meetings logged yet.</td></tr>
         <?php endif; ?>
         <?php foreach ($meetingList as $m): ?>
+            <?php $mid = (int)$m['meeting_id']; $hasMinutes = trim((string)($m['minutes'] ?? '')) !== ''; ?>
             <tr>
                 <td><?= h(date('m/d/Y g:i A', strtotime((string)$m['meeting_date']))) ?></td>
                 <td><?= h($m['meeting_type'] ?? '') ?></td>
                 <td><?= h($m['location'] ?? '') ?></td>
+                <td>
+                    <?php if ($hasMinutes): ?>
+                        <a href="#" data-bs-toggle="modal" data-bs-target="#minutesModal<?= $mid ?>">View Minutes</a>
+                    <?php endif; ?>
+                </td>
                 <td class="text-end">
-                    <a href="/index.php?page=project_meetings&project_id=<?= $pid ?>&edit_id=<?= (int)$m['meeting_id'] ?>" class="btn btn-sm btn-outline-secondary">Edit</a>
-                    <form method="post" action="/index.php?page=project_meetings_delete&project_id=<?= $pid ?>&meeting_id=<?= (int)$m['meeting_id'] ?>" class="d-inline" onsubmit="return confirm('Delete this meeting?');">
+                    <a href="/index.php?page=project_meetings&project_id=<?= $pid ?>&edit_id=<?= $mid ?>" class="btn btn-sm btn-outline-secondary">Edit</a>
+                    <form method="post" action="/index.php?page=project_meetings_delete&project_id=<?= $pid ?>&meeting_id=<?= $mid ?>" class="d-inline" onsubmit="return confirm('Delete this meeting?');">
                         <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                     </form>
                 </td>
@@ -76,4 +95,40 @@ $pid = (int)$project['project_id'];
     </table>
 </div>
 
+<?php foreach ($meetingList as $m): ?>
+    <?php
+    $mid = (int)$m['meeting_id'];
+    $hasMinutes = trim((string)($m['minutes'] ?? '')) !== '';
+    if (!$hasMinutes) { continue; }
+    $participants = $meetingAttendees[$mid] ?? [];
+    ?>
+    <div class="modal fade" id="minutesModal<?= $mid ?>" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        Meeting Minutes — <?= h(date('m/d/Y g:i A', strtotime((string)$m['meeting_date']))) ?>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p style="white-space: pre-wrap;"><?= h($m['minutes']) ?></p>
+                </div>
+                <div class="modal-footer">
+                    <form method="post" action="/index.php?page=project_meetings_email">
+                        <input type="hidden" name="project_id" value="<?= $pid ?>">
+                        <input type="hidden" name="meeting_id" value="<?= $mid ?>">
+                        <button type="submit" class="btn btn-primary btn-sm" <?= $participants ? '' : 'disabled' ?>
+                                title="<?= $participants ? 'Email minutes to all participants' : 'No participants with an email address' ?>">
+                            Email to Participants
+                        </button>
+                    </form>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+<?php endforeach; ?>
+
 <?php require APP_ROOT . '/app/views/layouts/footer.php'; ?>
+

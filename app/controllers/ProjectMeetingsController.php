@@ -21,6 +21,10 @@ final class ProjectMeetingsController
         if (!$project) { http_response_code(404); echo "Project not found."; return; }
 
         $meetingList = $this->meetings->listByProject($projectId);
+        $meetingAttendees = [];
+        foreach ($meetingList as $m) {
+            $meetingAttendees[(int)$m['meeting_id']] = $this->meetings->attendees((int)$m['meeting_id']);
+        }
         $editMeeting = null;
         $editAttendeeIds = [];
         if (!empty($_GET['edit_id'])) {
@@ -30,6 +34,9 @@ final class ProjectMeetingsController
             }
         }
         $people = $this->peopleOptions();
+        $emailSuccess = $_SESSION['meeting_email_success'] ?? null;
+        $emailError = $_SESSION['meeting_email_error'] ?? null;
+        unset($_SESSION['meeting_email_success'], $_SESSION['meeting_email_error']);
         require APP_ROOT . '/app/views/project_meetings/index.php';
     }
 
@@ -63,6 +70,80 @@ final class ProjectMeetingsController
         }
         header('Location: /index.php?page=project_meetings&project_id=' . $projectId);
         exit;
+    }
+
+    public function emailMinutes(): void
+    {
+        $id = (int)($_POST['meeting_id'] ?? 0);
+        $projectId = (int)($_POST['project_id'] ?? 0);
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $meeting = $this->meetings->find($id);
+            $project = $this->projects->find($projectId);
+
+            if (!$meeting || !$project) {
+                $_SESSION['meeting_email_error'] = 'Meeting not found.';
+            } elseif (trim((string)($meeting['minutes'] ?? '')) === '') {
+                $_SESSION['meeting_email_error'] = 'This meeting has no minutes to send.';
+            } else {
+                $attendees = $this->meetings->attendees($id);
+                $recipients = array_values(array_unique(array_filter(array_map(
+                    static fn(array $a) => trim((string)($a['email'] ?? '')),
+                    $attendees
+                ))));
+
+                if (!$recipients) {
+                    $_SESSION['meeting_email_error'] = 'No participants with an email address were found for this meeting.';
+                } else {
+                    $sent = $this->sendMinutesEmail($project, $meeting, $recipients);
+                    if ($sent) {
+                        $_SESSION['meeting_email_success'] = 'Minutes emailed to ' . count($recipients) . ' participant(s).';
+                    } else {
+                        $_SESSION['meeting_email_error'] = 'Failed to send the email. Please check the server mail configuration.';
+                    }
+                }
+            }
+        }
+
+        header('Location: /index.php?page=project_meetings&project_id=' . $projectId);
+        exit;
+    }
+
+    private function sendMinutesEmail(array $project, array $meeting, array $recipients): bool
+    {
+        $meetingDate = date('m/d/Y g:i A', strtotime((string)$meeting['meeting_date']));
+        $subject = 'Meeting Minutes: ' . $project['project_name'] . ' — ' . $meetingDate;
+
+        $body = "Meeting minutes for {$project['project_name']}\n";
+        $body .= "Date: {$meetingDate}\n";
+        if (!empty($meeting['meeting_type'])) {
+            $body .= "Type: {$meeting['meeting_type']}\n";
+        }
+        if (!empty($meeting['location'])) {
+            $body .= "Location: {$meeting['location']}\n";
+        }
+        if (!empty($meeting['agenda'])) {
+            $body .= "\nAgenda:\n{$meeting['agenda']}\n";
+        }
+        $body .= "\nMinutes:\n{$meeting['minutes']}\n";
+
+        $fromEmail = $this->pdo->query("SELECT primary_contact_email FROM organization_settings ORDER BY id ASC LIMIT 1")->fetchColumn();
+        $fromEmail = trim((string)($fromEmail ?: 'no-reply@' . ($_SERVER['SERVER_NAME'] ?? 'localhost')));
+
+        $headers = "From: " . $fromEmail . "\r\n";
+        $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
+
+        $allSent = true;
+        $attempted = 0;
+        foreach ($recipients as $to) {
+            if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
+                continue;
+            }
+            $attempted++;
+            $allSent = mail($to, $subject, $body, $headers) && $allSent;
+        }
+
+        return $attempted > 0 && $allSent;
     }
 
     private function collect(): array

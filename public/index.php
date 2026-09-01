@@ -171,6 +171,9 @@ switch ($page) {
     case 'project_meetings_delete':
         (new ProjectMeetingsController())->destroy();
         break;
+    case 'project_meetings_email':
+        (new ProjectMeetingsController())->emailMinutes();
+        break;
 
     case 'project_timeline':
         (new ProjectTimelineController())->index();
