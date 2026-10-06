@@ -133,6 +133,28 @@ final class ProjectTasksController
         exit;
     }
 
+    public function reorder(): void
+    {
+        header('Content-Type: application/json');
+        $projectId = (int)($_POST['project_id'] ?? 0);
+        $order = array_map('intval', (array)($_POST['order'] ?? []));
+        if ($projectId <= 0 || empty($order)) {
+            http_response_code(400);
+            echo json_encode(['ok' => false, 'error' => 'Missing project_id or order.']);
+            return;
+        }
+        $existingIds = array_column($this->tasks->listByProject($projectId), 'task_id');
+        $position = 10;
+        foreach ($order as $taskId) {
+            if (!in_array($taskId, $existingIds, true)) {
+                continue;
+            }
+            $this->tasks->updateSortOrder($taskId, $projectId, $position);
+            $position += 10;
+        }
+        echo json_encode(['ok' => true]);
+    }
+
     /**
      * AJAX endpoint used by the tasks page to populate the Add/Edit Task card
      * without a full page reload. Pass task_id=0 to fetch the blank "Add Task"

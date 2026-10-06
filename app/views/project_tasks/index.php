@@ -155,12 +155,19 @@ $statusBadgeClasses = [
     'blocked' => 'text-bg-danger',
 ];
 ?>
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <span class="text-muted small">Drag rows by the <strong>⠿</strong> handle to reorder tasks, then click <strong>Save Order</strong>.</span>
+    <div class="d-flex align-items-center gap-2">
+        <button type="button" id="saveTaskOrderBtn" class="btn btn-sm btn-primary">Save Order</button>
+        <span id="taskOrderStatus" class="small text-muted"></span>
+    </div>
+</div>
 <div class="table-responsive">
     <table class="table table-hover bg-white shadow-sm">
-        <thead><tr><th>Task</th><th>Status</th><th>Priority</th><th>Dependency</th><th>Assignee</th><th>Due</th><th></th></tr></thead>
-        <tbody>
+        <thead><tr><th style="width:40px"></th><th>Task</th><th>Status</th><th>Priority</th><th>Dependency</th><th>Assignee</th><th>Due</th><th></th></tr></thead>
+        <tbody id="tasksSortable">
         <?php if (!$taskList): ?>
-            <tr><td colspan="7" class="text-center text-muted py-4">No tasks yet.</td></tr>
+            <tr><td colspan="8" class="text-center text-muted py-4">No tasks yet.</td></tr>
         <?php endif; ?>
         <?php foreach ($taskList as $t): ?>
             <?php
@@ -168,7 +175,8 @@ $statusBadgeClasses = [
                 $depMet = !$isDependent || empty($t['depends_on_task_id']) || ($t['depends_on_status'] ?? null) === 'completed';
                 $isActiveRow = !empty($editTask) && (int)$editTask['task_id'] === (int)$t['task_id'];
             ?>
-            <tr class="task-row <?= $isActiveRow ? 'table-active' : '' ?>" data-task-id="<?= (int)$t['task_id'] ?>" style="cursor:pointer;" title="Click to edit this task">
+            <tr class="task-row <?= $isActiveRow ? 'table-active' : '' ?>" draggable="true" data-task-id="<?= (int)$t['task_id'] ?>" style="cursor:pointer;" title="Click to edit this task">
+                <td class="text-center text-muted drag-handle" style="cursor:grab" title="Drag to reorder">⠿</td>
                 <td><?= h($t['task_name']) ?></td>
                 <td><span class="badge <?= $statusBadgeClasses[$t['status']] ?? 'text-bg-secondary' ?>"><?= h(str_replace('_',' ',$t['status'])) ?></span></td>
                 <td><?= h($t['priority']) ?></td>
@@ -195,6 +203,7 @@ $statusBadgeClasses = [
         </tbody>
     </table>
 </div>
+
 
 <script>
 (function () {
@@ -335,6 +344,66 @@ $statusBadgeClasses = [
     cancelBtn.addEventListener('click', function (ev) {
         ev.preventDefault();
         loadTask(0);
+    });
+
+    // ── Drag-to-reorder tasks ───────────────────────────────────────────
+    var sortableList = document.getElementById('tasksSortable');
+    var saveOrderBtn = document.getElementById('saveTaskOrderBtn');
+    var orderStatus = document.getElementById('taskOrderStatus');
+    var dragEl = null;
+
+    document.querySelectorAll('.drag-handle').forEach(function (handle) {
+        handle.addEventListener('click', function (ev) { ev.stopPropagation(); });
+    });
+
+    sortableList.addEventListener('dragstart', function (e) {
+        var row = e.target.closest('.task-row');
+        if (!row) { return; }
+        dragEl = row;
+        e.dataTransfer.effectAllowed = 'move';
+        row.classList.add('opacity-50');
+    });
+
+    sortableList.addEventListener('dragend', function () {
+        if (dragEl) { dragEl.classList.remove('opacity-50'); }
+        dragEl = null;
+        orderStatus.textContent = '';
+    });
+
+    sortableList.addEventListener('dragover', function (e) {
+        e.preventDefault();
+        var row = e.target.closest('.task-row');
+        if (!row || row === dragEl || !dragEl) { return; }
+        var rect = row.getBoundingClientRect();
+        var after = (e.clientY - rect.top) > (rect.height / 2);
+        sortableList.insertBefore(dragEl, after ? row.nextSibling : row);
+        orderStatus.textContent = 'Order changed — click Save Order to keep it.';
+    });
+
+    saveOrderBtn.addEventListener('click', function () {
+        var order = Array.from(sortableList.querySelectorAll('.task-row')).map(function (row) {
+            return row.getAttribute('data-task-id');
+        });
+        if (!order.length) { return; }
+        saveOrderBtn.disabled = true;
+        orderStatus.textContent = 'Saving…';
+        var body = new URLSearchParams();
+        body.append('project_id', pid);
+        order.forEach(function (id) { body.append('order[]', id); });
+        fetch('/index.php?page=project_tasks_reorder', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body.toString()
+        })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                saveOrderBtn.disabled = false;
+                orderStatus.textContent = data.ok ? 'Order saved.' : 'Failed to save: ' + (data.error || 'unknown error');
+            })
+            .catch(function () {
+                saveOrderBtn.disabled = false;
+                orderStatus.textContent = 'Failed to save order (network error).';
+            });
     });
 })();
 </script>

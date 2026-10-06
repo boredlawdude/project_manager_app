@@ -89,6 +89,9 @@ switch ($page) {
     case 'project_tasks_get':
         (new ProjectTasksController())->get();
         break;
+    case 'project_tasks_reorder':
+        (new ProjectTasksController())->reorder();
+        break;
 
     case 'project_gantt':
         (new ProjectGanttController())->index();

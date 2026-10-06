@@ -114,6 +114,12 @@ final class ProjectTask
         $this->db->prepare("DELETE FROM project_tasks WHERE task_id = ?")->execute([$id]);
     }
 
+    public function updateSortOrder(int $id, int $projectId, int $sortOrder): bool
+    {
+        $stmt = $this->db->prepare("UPDATE project_tasks SET sort_order = ? WHERE task_id = ? AND project_id = ?");
+        return $stmt->execute([$sortOrder, $id, $projectId]);
+    }
+
     public function updateDates(int $id, string $startDate, string $dueDate): void
     {
         $stmt = $this->db->prepare("

@@ -46,13 +46,18 @@ $pid = (int)$project['project_id'];
                 </div>
                 <div class="col-12">
                     <label class="form-label small mb-0">Attendees</label>
-                    <select name="attendee_person_ids[]" class="form-select" multiple size="4">
+                    <div class="border rounded p-2" style="max-height: 160px; overflow-y: auto; column-width: 180px; column-gap: 1rem;">
                         <?php foreach ($people as $person): ?>
-                            <option value="<?= (int)$person['person_id'] ?>" <?= in_array((int)$person['person_id'], $editAttendeeIds ?? [], true) ? 'selected' : '' ?>>
-                                <?= h($person['name']) ?>
-                            </option>
+                            <div class="form-check text-nowrap mb-1" style="break-inside: avoid;">
+                                <input class="form-check-input" type="checkbox" name="attendee_person_ids[]"
+                                       id="attendee_<?= (int)$person['person_id'] ?>" value="<?= (int)$person['person_id'] ?>"
+                                       <?= in_array((int)$person['person_id'], $editAttendeeIds ?? [], true) ? 'checked' : '' ?>>
+                                <label class="form-check-label" for="attendee_<?= (int)$person['person_id'] ?>">
+                                    <?= h($person['name']) ?>
+                                </label>
+                            </div>
                         <?php endforeach; ?>
-                    </select>
+                    </div>
                 </div>
             </div>
             <div class="mt-2">
